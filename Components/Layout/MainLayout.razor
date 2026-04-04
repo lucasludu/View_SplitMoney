@@ -1,0 +1,47 @@
+@inherits LayoutComponentBase
+@using SplitMoney.Client.Components.UI
+
+<div class="app-container">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main class="main-content">
+        <article class="content p-0 m-0">
+            @Body
+        </article>
+        <ToastNotification />
+    </main>
+</div>
+
+<style>
+    .app-container {
+        display: flex;
+        flex-direction: row;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        flex-shrink: 0;
+    }
+
+    .main-content {
+        flex-grow: 1;
+        overflow-y: auto;
+        position: relative;
+        background: var(--background);
+        width: 100%;
+    }
+
+    @@media (max-width: 767.98px) {
+        .app-container {
+            flex-direction: column;
+        }
+        
+        .main-content {
+            padding-top: 64px; /* Espacio para el header fijo del NavMenu */
+        }
+    }
+</style>

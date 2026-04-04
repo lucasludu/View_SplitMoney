@@ -1,0 +1,125 @@
+@page "/register"
+@layout SplitMoney.Client.Components.Layout.EmptyLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="editorial-card" style="width: 100%; max-width: 400px; padding: 2rem;">
+        <div class="text-center mb-8">
+            <h1 class="brand-font" style="font-size: 2.5rem; color: var(--primary);">Join Us</h1>
+            <p style="color: var(--on-surface-variant);">Start your financial journey.</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger" style="background-color: var(--error-container); border: none; color: white; border-radius: 0.5rem; font-size: 0.875rem;">
+                <p>@errorMessage</p>
+                @if (errors.Any())
+                {
+                    <ul style="margin-top: 5px; padding-left: 15px;">
+                        @foreach (var error in errors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-6">
+                    <div class="editorial-input-group">
+                        <label class="editorial-label">First Name</label>
+                        <InputText @bind-Value="registerModel.FirstName" class="editorial-input" placeholder="Lucas" />
+                        <ValidationMessage For="@(() => registerModel.FirstName)" />
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="editorial-input-group">
+                        <label class="editorial-label">Last Name</label>
+                        <InputText @bind-Value="registerModel.LastName" class="editorial-input" placeholder="Ludu" />
+                        <ValidationMessage For="@(() => registerModel.LastName)" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="editorial-input-group">
+                <label class="editorial-label">Email</label>
+                <InputText @bind-Value="registerModel.Email" class="editorial-input" placeholder="name@example.com" />
+                <ValidationMessage For="@(() => registerModel.Email)" />
+            </div>
+
+            <div class="editorial-input-group">
+                <label class="editorial-label">Password</label>
+                <InputText @bind-Value="registerModel.Password" type="password" class="editorial-input" placeholder="••••••••" />
+                <ValidationMessage For="@(() => registerModel.Password)" />
+            </div>
+
+            <div class="editorial-input-group">
+                <label class="editorial-label">Confirm Password</label>
+                <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="editorial-input" placeholder="••••••••" />
+                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+            </div>
+
+            <button type="submit" class="editorial-button-primary mt-4 mb-4" disabled="@loading">
+                @if (loading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <span>Create Account</span>
+                }
+            </button>
+
+            <div class="text-center">
+                <p style="font-size: 0.875rem; color: var(--on-surface-variant);">
+                    Already have an account? <a href="/login" class="editorial-link">Login</a>
+                </p>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private RegisterUserRequest registerModel = new RegisterUserRequest();
+    private string? errorMessage;
+    private List<string> errors = new List<string>();
+    private bool loading = false;
+
+    private async Task HandleRegister()
+    {
+        loading = true;
+        errorMessage = null;
+        errors.Clear();
+
+        try
+        {
+            var result = await AuthService.Register(registerModel);
+
+            if (result.Succeeded)
+            {
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Registration failed.";
+                if (result.Errors != null)
+                {
+                    errors = result.Errors;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

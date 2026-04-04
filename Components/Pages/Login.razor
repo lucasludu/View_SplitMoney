@@ -1,0 +1,92 @@
+@page "/login"
+@layout SplitMoney.Client.Components.Layout.EmptyLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="editorial-card" style="width: 100%; max-width: 400px;">
+        <div class="text-center mb-8">
+            <h1 class="brand-font" style="font-size: 2.5rem; color: var(--primary);">SplitMoney</h1>
+            <p style="color: var(--on-surface-variant);">Welcome back, Architect.</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger" style="background-color: var(--error-container); border: none; color: white; border-radius: 0.5rem;">
+                @errorMessage
+            </div>
+        }
+
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="editorial-input-group">
+                <label class="editorial-label">Email</label>
+                <InputText @bind-Value="loginModel.Email" class="editorial-input" placeholder="name@example.com" />
+                <ValidationMessage For="@(() => loginModel.Email)" />
+            </div>
+
+            <div class="editorial-input-group">
+                <label class="editorial-label">Password</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="editorial-input" placeholder="••••••••" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            <div class="text-end mb-4">
+                <a href="/forgot-password" class="editorial-link" style="font-size: 0.875rem;">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="editorial-button-primary mb-4" disabled="@loading">
+                @if (loading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <span>Login</span>
+                }
+            </button>
+
+            <div class="text-center">
+                <p style="font-size: 0.875rem; color: var(--on-surface-variant);">
+                    New here? <a href="/register" class="editorial-link">Create an account</a>
+                </p>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginModel = new LoginRequest();
+    private string? errorMessage;
+    private bool loading = false;
+
+    private async Task HandleLogin()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await AuthService.Login(loginModel);
+
+            if (result.Succeeded)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Login failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

@@ -1,0 +1,141 @@
+@page "/groups/new"
+@using SplitMoney.Client.Services
+@using SplitMoney.Client.Models.ViewModels
+@using System.Security.Claims
+@attribute [Authorize]
+@inject NavigationManager Navigation
+@inject IExpenseService ExpenseService
+@inject IToastService ToastService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="container-fluid px-3 py-4 p-md-5" style="max-width: 700px; margin: 0 auto;">
+    
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-5 gap-3">
+        <button class="btn rounded-circle" style="background-color: var(--surface-container-highest); color: var(--on-surface); width: 44px; height: 44px; border: 1px solid var(--outline-variant);" @onclick="GoBack">
+            <span style="font-size: 1.2rem;">⬅️</span>
+        </button>
+        <div>
+            <p class="mb-1" style="color: var(--on-surface-variant); font-size: 0.75rem; text-transform: uppercase;">Nuevos Círculos</p>
+            <h1 class="brand-font m-0 h2-responsive">Crear Nuevo Grupo</h1>
+        </div>
+    </div>
+
+    <div class="editorial-card shadow-lg p-4 p-md-5">
+        <form @onsubmit="HandleSubmit">
+            <!-- Group Name -->
+            <div class="editorial-input-group mb-4">
+                <label class="editorial-label">Nombre del Grupo</label>
+                <input type="text" class="editorial-input brand-font" style="font-size: 1.5rem;" placeholder="Ej: Viaje a Brasil 🇧🇷" @bind="groupName" required />
+            </div>
+
+            <!-- Description -->
+            <div class="editorial-input-group mb-5">
+                <label class="editorial-label">Descripción (Opcional)</label>
+                <input type="text" class="editorial-input" placeholder="¿De qué trata este grupo?" @bind="description" />
+            </div>
+
+            <!-- Add Members Section -->
+            <div class="mb-5">
+                <label class="editorial-label d-flex justify-content-between align-items-center mb-3">
+                    Invitados
+                    <span class="badge bg-primary rounded-pill">@(members.Count) personas</span>
+                </label>
+                
+                <div class="d-flex gap-2 mb-4">
+                    <div style="flex-grow: 1; position: relative;">
+                        <input type="email" class="editorial-input" placeholder="amigo@email.com" @bind="newMemberEmail" @onkeydown="@(e => { if(e.Key == "Enter") AddMember(); })" />
+                        <span style="position: absolute; right: 1rem; top: 1rem; opacity: 0.5;">✉️</span>
+                    </div>
+                    <button type="button" class="editorial-button-primary" style="width: 120px; border-radius: 12px; height: 50px;" @onclick="AddMember">
+                        <span>Añadir</span>
+                    </button>
+                </div>
+
+                <div class="members-list">
+                    @foreach (var m in members)
+                    {
+                        <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-3" style="background: var(--surface-container-low); border: 1px solid var(--outline-variant);">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: var(--primary); color: white; font-weight: bold; font-size: 12px;">
+                                    @m.Email.Substring(0, 1).ToUpper()
+                                </div>
+                                <span style="font-size: 0.9rem;">@m.Email</span>
+                                @if (m.Email == userEmail)
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">Tú</span>
+                                }
+                            </div>
+                            @if (m.Email != userEmail)
+                            {
+                                <button type="button" class="btn btn-link btn-sm text-danger text-decoration-none" @onclick="() => members.Remove(m)">Quitar</button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <button type="submit" class="editorial-button-primary mt-4 py-3" disabled="@submitting">
+                @if (submitting)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                }
+                else
+                {
+                    <span>Crear Grupo y Empezar 🌐</span>
+                }
+            </button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string groupName = string.Empty;
+    private string description = string.Empty;
+    private string newMemberEmail = string.Empty;
+    private string userEmail = string.Empty;
+    private List<MemberSpendRecordViewModel> members = new();
+    private bool submitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        userEmail = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "";
+        
+        if (!string.IsNullOrEmpty(userEmail))
+        {
+            members.Add(new MemberSpendRecordViewModel { Email = userEmail, AmountSpent = 0 });
+        }
+    }
+
+    private void AddMember()
+    {
+        if (!string.IsNullOrWhiteSpace(newMemberEmail) && newMemberEmail.Contains("@") && !members.Any(m => m.Email == newMemberEmail))
+        {
+            members.Add(new MemberSpendRecordViewModel { Email = newMemberEmail, AmountSpent = 0 });
+            newMemberEmail = string.Empty;
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/groups");
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(groupName)) return;
+
+        submitting = true;
+        // Enviamos los miembros con monto 0, ya que así lo maneja el backend ahora de forma limpia
+        var success = await ExpenseService.CreateGroupAsync(groupName, members);
+        submitting = false;
+
+        if (success)
+        {
+            ToastService.ShowToast("¡Grupo creado con éxito! 🌐", ToastLevel.Success);
+            Navigation.NavigateTo("/groups");
+        }
+        else
+        {
+            ToastService.ShowToast("Error al crear el grupo", ToastLevel.Error);
+        }
+    }
+}

@@ -1,0 +1,61 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Authorization;
+using SplitMoney.Client.Infrastructure;
+using SplitMoney.Client.Services;
+
+namespace SplitMoney.Client;
+
+public static class MauiProgram
+{
+	public static MauiApp CreateMauiApp()
+	{
+		var builder = MauiApp.CreateBuilder();
+		builder
+			.UseMauiApp<App>()
+			.ConfigureFonts(fonts =>
+			{
+				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+			});
+
+		builder.Services.AddMauiBlazorWebView();
+
+#if DEBUG
+		builder.Services.AddBlazorWebViewDeveloperTools();
+		builder.Logging.AddDebug();
+#endif
+
+		// Authentication and Authorization services registration
+        builder.Services.AddAuthorizationCore();
+        builder.Services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<IExpenseService, ExpenseService>();
+        builder.Services.AddScoped<IToastService, ToastService>();
+
+        // HTTP Handlers registration
+        builder.Services.AddTransient<AuthenticationHeaderHandler>();
+        builder.Services.AddTransient<RefreshTokenHandler>();
+        builder.Services.AddTransient<ConnectivityHandler>();
+
+        // Dynamic API URL for Android Emulator vs Windows (Using HTTPS with bypass)
+        string baseAddress = DeviceInfo.Platform == DevicePlatform.Android 
+            ? "https://10.0.2.2:7042/" 
+            : "https://localhost:7042/";
+
+        builder.Services.AddTransient<DevelopmentHttpClientHandler>();
+
+        builder.Services.AddHttpClient("SplitMoneyApi", cl => 
+        {
+            cl.BaseAddress = new Uri(baseAddress);
+        })
+        .ConfigurePrimaryHttpMessageHandler<DevelopmentHttpClientHandler>()
+        .AddHttpMessageHandler<ConnectivityHandler>()
+        .AddHttpMessageHandler<AuthenticationHeaderHandler>()
+        .AddHttpMessageHandler<RefreshTokenHandler>();
+
+        builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("SplitMoneyApi"));
+
+		return builder.Build();
+	}
+}

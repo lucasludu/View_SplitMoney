@@ -1,0 +1,28 @@
+@page "/session-expired"
+@layout SplitMoney.Client.Components.Layout.EmptyLayout
+
+<div class="container d-flex align-items-center justify-content-center min-vh-100 px-4">
+    <div class="editorial-card text-center shadow-lg border-warning py-6 px-4" style="max-width: 500px; background: linear-gradient(135deg, var(--surface-container-low), #1e1e1e); border: 2px solid #fbbf24; opacity: 0.95;">
+        <div class="mb-5 mx-auto" style="width: 120px; height: 120px; background: rgba(251, 191, 36, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; box-shadow: 0 0 40px rgba(251, 191, 36, 0.2); animation: pulse 2s infinite;">
+            ⏳
+        </div>
+        <h1 class="brand-font mb-3" style="font-size: 2.2rem; color: #fbbf24;">Sesión Expirada</h1>
+        <p class="mx-auto mb-5" style="color: var(--on-surface-variant); line-height: 1.7; font-size: 1.1rem; max-width: 380px;">
+            Tu tiempo de inactividad ha cerrado la conexión por seguridad. Por favor, vuelve a iniciar sesión para seguir dividiendo gastos.
+        </p>
+        <div class="d-grid gap-3">
+            <a href="/login" class="editorial-button-primary d-inline-flex align-items-center justify-content-center gap-2" style="background: linear-gradient(135deg, #fbbf24, #d97706); color: #000;">
+                <span class="fw-800">Iniciar Sesión de Nuevo</span>
+                <span style="font-size: 1.25rem;">🔑</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); }
+        50% { transform: scale(1.05); box-shadow: 0 0 50px rgba(251, 191, 36, 0.4); }
+        100% { transform: scale(1); box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); }
+    }
+</style>

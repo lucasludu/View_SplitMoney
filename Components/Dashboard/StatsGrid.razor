@@ -1,0 +1,36 @@
+@inject NavigationManager Navigation
+
+<div class="row flex-nowrap overflow-auto pb-3 mb-4" style="margin-left: -0.25rem; margin-right: -0.25rem; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
+    <div class="col-10 col-md-4 px-2">
+        <div class="editorial-card text-center p-3 h-100" style="border-left: 4px solid #10b981; border-top-left-radius: 4px; border-bottom-left-radius: 4px; position: relative; overflow: hidden;">
+            <p class="editorial-label mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Te deben</p>
+            <h2 class="brand-font h2-responsive m-0" style="color: #10b981;">@TeDeben.ToString("C2")</h2>
+        </div>
+    </div>
+    
+    <div class="col-10 col-md-4 px-2">
+        <div class="editorial-card text-center p-3 h-100" style="border-left: 4px solid #ef4444; border-top-left-radius: 4px; border-bottom-left-radius: 4px; cursor: pointer; transition: transform 0.2s;" @onclick="NavigateToSettle">
+            <div class="d-flex justify-content-center align-items-center gap-2 mb-1">
+                <p class="editorial-label m-0" style="font-size: 0.75rem; text-transform: uppercase;">Debes</p>
+                <span class="badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">LIQUIDAR</span>
+            </div>
+            <h2 class="brand-font h2-responsive m-0" style="color: #ef4444;">@Debes.ToString("C2")</h2>
+            <p class="m-0 mt-1" style="font-size: 0.65rem; color: var(--on-surface-variant); opacity: 0.8;">Toca para saldar 💸</p>
+        </div>
+    </div>
+
+    <div class="col-10 col-md-4 px-2">
+        <div class="editorial-card text-center p-3 h-100" style="border-left: 4px solid var(--primary); border-top-left-radius: 4px; border-bottom-left-radius: 4px;">
+            <p class="editorial-label mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Gasto Total (Mes)</p>
+            <h2 class="brand-font h2-responsive m-0" style="color: var(--primary);">@TotalMes.ToString("C2")</h2>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public decimal TeDeben { get; set; }
+    [Parameter] public decimal Debes { get; set; }
+    [Parameter] public decimal TotalMes { get; set; }
+
+    private void NavigateToSettle() => Navigation.NavigateTo("/settle");
+}

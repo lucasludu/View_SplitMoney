@@ -1,0 +1,240 @@
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<!-- Top Bar for Mobile -->
+<div class="top-row d-flex align-items-center justify-content-between d-md-none px-3 shadow-sm mobile-header">
+    <a class="navbar-brand brand-font m-0" href="" style="color: var(--on-surface); font-size: 1.4rem;">SplitMoney</a>
+    <button class="menu-button" @onclick="ToggleNavMenu">
+        <span class="icon">@(collapseNavMenu ? "☰" : "✕")</span>
+    </button>
+</div>
+
+<!-- Backdrop Overlay for Mobile -->
+@if (!collapseNavMenu)
+{
+    <div class="menu-backdrop d-md-none" @onclick="ToggleNavMenu"></div>
+}
+
+<!-- Sidebar / Overlay Mobile Menu -->
+<div class="sidebar-main @(collapseNavMenu ? "collapsed" : "expanded") shadow-lg">
+    <!-- Header for Desktop -->
+    <div class="top-row d-none d-md-flex align-items-center mb-4 px-4" style="height: 64px;">
+        <a class="navbar-brand brand-font m-0" href="" style="color: var(--on-surface); font-size: 1.6rem;">SplitMoney</a>
+    </div>
+
+    <!-- Navigation Items -->
+    <nav class="nav-content d-flex flex-column px-3" style="height: calc(100vh - 80px); overflow-y: auto;">
+        <div class="nav-group mb-4">
+            <NavLink class="editorial-nav-link" href="" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                <span class="nav-icon">🏠</span> <span class="nav-text">Home</span>
+            </NavLink>
+        </div>
+        
+        <div class="nav-group mb-4">
+            <p class="nav-label">Operaciones</p>
+            <NavLink class="editorial-nav-link" href="/expenses/new" @onclick="CloseMenu">
+                <span class="nav-icon">➕</span> <span class="nav-text">Cargar Gasto</span>
+            </NavLink>
+            <NavLink class="editorial-nav-link" href="/groups" @onclick="CloseMenu">
+                <span class="nav-icon">👥</span> <span class="nav-text">Mis Grupos</span>
+            </NavLink>
+            <NavLink class="editorial-nav-link" href="/settle" @onclick="CloseMenu">
+                <span class="nav-icon">💸</span> <span class="nav-text">Saldar Cuentas</span>
+            </NavLink>
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="mt-auto pb-4 px-2">
+                    <div class="user-profile-card p-3 mb-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-circle">
+                                @userName.Substring(0, 1).ToUpper()
+                            </div>
+                            <div class="user-info flex-grow-1 overflow-hidden">
+                                <p class="m-0 fw-bold text-truncate">@userName</p>
+                                <p class="m-0 small-text">Architect Staff</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="editorial-nav-link logout-nav-link btn btn-link text-start w-100" @onclick="HandleLogout">
+                        <span class="nav-icon">🚪</span> <span class="nav-text">Cerrar Sesión</span>
+                    </button>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+<style>
+    .mobile-header {
+        height: 64px; 
+        background: var(--surface-container); 
+        border-bottom: 1px solid var(--outline-variant); 
+        position: fixed; 
+        top: 0; 
+        left: 0;
+        width: 100vw; 
+        z-index: 1100;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .menu-button {
+        width: 44px; 
+        height: 44px; 
+        background: var(--surface-container-highest); 
+        border-radius: 12px; 
+        border: 1px solid var(--outline-variant);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--on-surface);
+        transition: transform 0.2s;
+    }
+
+    .menu-button:active { transform: scale(0.9); }
+
+    .sidebar-main {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        background: var(--surface-container);
+        z-index: 2000;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-right: 1px solid var(--outline-variant);
+        padding-top: 1rem;
+    }
+
+    @@media (max-width: 767.98px) {
+        .sidebar-main.collapsed { transform: translateX(-100%); }
+        .sidebar-main.expanded { transform: translateX(0); }
+    }
+
+    @@media (min-width: 768px) {
+        .sidebar-main { 
+            position: relative;
+            transform: translateX(0);
+        }
+    }
+
+    .menu-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1500;
+    }
+
+    .nav-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--on-surface-variant);
+        font-weight: 700;
+        padding: 0 1rem;
+        margin-bottom: 1rem;
+        opacity: 0.7;
+    }
+
+    .editorial-nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem 1rem;
+        color: var(--on-surface-variant);
+        text-decoration: none;
+        border-radius: 12px;
+        transition: all 0.2s;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .editorial-nav-link:hover, .editorial-nav-link.active {
+        background: var(--surface-container-highest);
+        color: var(--on-surface);
+    }
+
+    .editorial-nav-link.active {
+        color: var(--primary);
+        font-weight: 700;
+    }
+
+    .nav-icon {
+        font-size: 1.2rem;
+        width: 32px;
+        display: flex;
+        align-items: center;
+    }
+
+    .logout-nav-link:hover {
+        background: var(--error-container) !important;
+        color: var(--on-error-container) !important;
+    }
+
+    .user-profile-card {
+        background: var(--surface-container-high);
+        border-radius: 16px;
+        border: 1px solid var(--outline-variant);
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background: var(--primary);
+        color: var(--on-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .small-text {
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+        opacity: 0.8;
+    }
+</style>
+
+@code {
+    private bool collapseNavMenu = true;
+    private string userName = "User";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var name = user.Claims.FirstOrDefault(c => c.Type == "FirstName" || c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
+            if (!string.IsNullOrEmpty(name))
+                userName = name;
+        }
+    }
+
+    private void ToggleNavMenu() 
+    {
+        collapseNavMenu = !collapseNavMenu;
+        StateHasChanged();
+    }
+
+    private void CloseMenu() 
+    {
+        collapseNavMenu = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.Logout();
+        Navigation.NavigateTo("/login");
+    }
+}

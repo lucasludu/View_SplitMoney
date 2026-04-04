@@ -1,0 +1,431 @@
+@page "/groups"
+@using SplitMoney.Client.Services
+@using SplitMoney.Client.Models.ViewModels
+@attribute [Authorize]
+@inject IExpenseService ExpenseService
+@inject NavigationManager Navigation
+
+<div class="container-fluid px-3 py-4 p-md-4" style="max-width: 800px; margin: 0 auto;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="mb-1" style="color: var(--on-surface-variant); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">Gestión</p>
+            <h1 class="brand-font m-0 h1-responsive">Mis Grupos</h1>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex flex-column gap-3">
+            @for (int i = 0; i < 4; i++)
+            {
+                <div class="skeleton" style="height: 80px; border-radius: 1rem; width: 100%;"></div>
+            }
+        </div>
+    }
+    else if (groups == null || !groups.Any())
+    {
+        <div class="editorial-card text-center py-6 px-4 shadow-lg border-primary" style="background: linear-gradient(145deg, var(--surface-container-low), var(--surface-container-high)); border: 1.5px dashed var(--primary); opacity: 0.9; margin-top: 2rem;">
+            <div class="mb-4 mx-auto" style="width: 100px; height: 100px; background: var(--surface-container-highest); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 2px solid var(--primary);">
+                👥
+            </div>
+            <h2 class="brand-font mb-3" style="font-size: 1.8rem; color: var(--on-surface);">No hay grupos creados</h2>
+            <p class="mx-auto mb-4" style="color: var(--on-surface-variant); max-width: 400px; line-height: 1.6;">
+                Crea un grupo para empezar a dividir gastos con tus amigos y familiares.
+            </p>
+            <button class="editorial-button-primary d-inline-flex align-items-center justify-content-center gap-2" style="width: auto; padding: 0.8rem 2rem;" @onclick="NavigateToCreateGroup">
+                <span>Crear mi primer grupo</span>
+                <span style="font-size: 1.2rem;">✨</span>
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column gap-3">
+            @foreach (var group in groups)
+            {
+                <div class="group-card d-flex align-items-center justify-content-between p-3" @onclick="() => ShowGroupDetails(group)">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="group-icon">
+                            @group.Name.Substring(0, 1).ToUpper()
+                        </div>
+                        <div>
+                            <h3 class="m-0 h5 fw-bold" style="color: var(--on-surface);">@group.Name</h3>
+                            <p class="m-0 small" style="color: var(--on-surface-variant); opacity: 0.9; font-weight: 500;">Ver balances y miembros</p>
+                        </div>
+                    </div>
+                    <div class="text-primary" style="font-size: 1.2rem;">
+                        ➡️
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Group Details Modal/Overlay -->
+@if (selectedGroup != null)
+{
+    <div class="details-overlay" @onclick="CloseDetails">
+        <div class="details-panel shadow-lg" @onclick:stopPropagation="true">
+            <div class="d-flex justify-content-between align-items-center mb-4 p-4 border-bottom" style="border-color: var(--outline-variant) !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="group-icon" style="width: 40px; height: 40px; font-size: 1rem;">
+                        @selectedGroup.Name.Substring(0, 1).ToUpper()
+                    </div>
+                    <h2 class="brand-font m-0 h4">@selectedGroup.Name</h2>
+                </div>
+                <button class="btn-close-custom" @onclick="CloseDetails">✕</button>
+            </div>
+
+            <div class="p-4" style="overflow-y: auto; max-height: calc(85vh - 100px);">
+                @if (loadingDetails)
+                {
+                    <div class="skeleton mb-4" style="height: 120px; border-radius: 1.5rem;"></div>
+                    <div class="skeleton mb-4" style="height: 200px; border-radius: 1.5rem;"></div>
+                }
+                else if (breakdown != null)
+                {
+                    <!-- Summary Card -->
+                    <div class="editorial-card mb-4 p-4 text-center shadow-sm" style="background: var(--surface-container-low); border: 1px solid var(--outline-variant);">
+                        <p class="editorial-label mb-1" style="font-size: 0.7rem;">Gasto Total del Círculo</p>
+                        <h2 class="brand-font display-6 m-0" style="color: var(--primary);">@breakdown.TotalGroupExpense.ToString("C0")</h2>
+                        <div class="mt-3 d-flex justify-content-center gap-2">
+                             <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-3 py-2" style="font-size: 0.7rem;">
+                                @members?.Count miembros activos
+                             </span>
+                        </div>
+                    </div>
+
+                    <!-- Breakdown List (The part from Stitch) -->
+                    <div class="mb-5">
+                        <h5 class="section-label mb-3">DESGLOSE POR MIEMBRO</h5>
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var m in breakdown.Members)
+                            {
+                                <div class="balance-item p-3 d-flex justify-content-between align-items-center" style="border-left: 4px solid @(m.NetBalance >= 0 ? "#10b981" : "#ef4444");">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="member-avatar" style="width: 36px; height: 36px; background: var(--surface-container-highest); color: var(--on-surface);">
+                                            @m.FullName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div>
+                                            <p class="m-0 fw-bold" style="font-size: 0.95rem;">@m.FullName</p>
+                                            <p class="m-0 small text-muted">@m.TransactionCount transacciones</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        @if (m.NetBalance > 0)
+                                        {
+                                            <p class="m-0 small text-success fw-bold text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.05em;">Le deben</p>
+                                            <p class="m-0 fw-bold text-success" style="font-size: 1.1rem;">+@m.NetBalance.ToString("C0")</p>
+                                        }
+                                        else if (m.NetBalance < 0)
+                                        {
+                                            <p class="m-0 small text-danger fw-bold text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.05em;">Debe</p>
+                                            <p class="m-0 fw-bold text-danger" style="font-size: 1.1rem;">@m.NetBalance.ToString("C0")</p>
+                                        }
+                                        else
+                                        {
+                                            <p class="m-0 small text-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Al día</p>
+                                            <p class="m-0 fw-bold text-muted" style="font-size: 1.1rem;">$0</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Balances Section (Debts between people) -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="section-label m-0">PLAN DE PAGOS (LIQUIDACIÓN)</h5>
+                            @if (balances != null && balances.Any())
+                            {
+                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.65rem;">Pendiente</span>
+                            }
+                        </div>
+                        
+                        @if (balances == null || !balances.Any())
+                        {
+                            <div class="text-center py-5 px-3 rounded-4" style="background: var(--surface-container-low); border: 1.5px dashed var(--outline-variant);">
+                                <span style="font-size: 2.5rem;">🎉</span>
+                                <p class="mt-3 mb-1 fw-bold h5 brand-font">¡Todo saldado!</p>
+                                <p class="small text-muted mb-0">Nadie le debe a nadie en este círculo.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="balances-list">
+                                @foreach (var balance in balances)
+                                {
+                                    <div class="balance-item p-3 mb-2" style="background: rgba(var(--primary-rgb), 0.03);">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="debtor-info" style="font-size: 0.9rem;">
+                                                <span class="fw-bold text-danger">@balance.DebtorName</span>
+                                                <span class="mx-1" style="opacity: 0.6;">paga a</span>
+                                                <span class="fw-bold text-success">@balance.CreditorName</span>
+                                            </div>
+                                            <div class="amount-badge bg-primary text-white border-0">
+                                                @balance.Amount.ToString("C0")
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            
+            <div class="p-4 border-top text-center" style="border-color: var(--outline-variant) !important;">
+                <button class="editorial-button-primary w-100" @onclick="NavigateToNewExpense">
+                    Cargar Gasto en este Grupo 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Floating Action Button -->
+<button class="fab-button shadow-lg" @onclick="NavigateToCreateGroup" title="Nuevo Grupo">
+    <span style="font-size: 2rem; line-height: 1;">+</span>
+</button>
+
+<style>
+    .group-card {
+        background: var(--surface-container-low);
+        border: 1px solid var(--outline-variant);
+        border-radius: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .group-card:hover {
+        background: var(--surface-container-high);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+
+    .group-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .fab-button {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: var(--on-primary);
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s, background-color 0.2s;
+        z-index: 1000;
+    }
+
+    .fab-button:hover {
+        transform: scale(1.1) rotate(90deg);
+        background: var(--primary-fixed);
+    }
+
+    .fab-button:active {
+        transform: scale(0.95);
+    }
+
+    /* Details Overlay Styles */
+    .details-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+    }
+
+    .details-panel {
+        width: 100%;
+        max-width: 600px;
+        background: var(--surface-container-lowest);
+        border-radius: 2rem 2rem 0 0;
+        max-height: 90vh;
+        animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    @@keyframes slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .btn-close-custom {
+        background: var(--surface-container-highest);
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: var(--on-surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        transition: transform 0.2s;
+    }
+
+    .btn-close-custom:hover { transform: scale(1.1); }
+
+    .section-label {
+        font-size: 0.7rem;
+        letter-spacing: 0.15em;
+        color: var(--on-surface-variant);
+        font-weight: 800;
+        opacity: 0.7;
+    }
+
+    .member-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: var(--surface-container-high);
+        border: 1px solid var(--outline-variant);
+        border-radius: 100px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .member-avatar {
+        width: 24px;
+        height: 24px;
+        background: var(--primary);
+        color: white;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .balance-item {
+        background: var(--surface-container-low);
+        border: 1px solid var(--outline-variant);
+        border-radius: 1rem;
+    }
+
+    .amount-badge {
+        padding: 4px 12px;
+        background: var(--error-container);
+        color: var(--on-error-container);
+        border-radius: 100px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, 
+            var(--surface-container-high) 25%, 
+            var(--surface-container-highest) 50%, 
+            var(--surface-container-high) 75%);
+        background-size: 200% 100%;
+        animation: loading-shimmer 1.5s infinite;
+        border: 1px solid var(--outline-variant);
+    }
+
+    @@keyframes loading-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    @@media (min-width: 768px) {
+        .details-overlay { align-items: center; padding: 2rem; }
+        .details-panel { border-radius: 2rem; }
+        @@keyframes slide-up {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    }
+</style>
+
+@code {
+    private List<GroupSummaryViewModel>? groups;
+    private bool isLoading = true;
+    
+    private GroupSummaryViewModel? selectedGroup;
+    private List<GroupMemberResponse>? members;
+    private List<BalanceResponse>? balances;
+    private GroupSpendingBreakdownViewModel? breakdown;
+    private bool loadingDetails = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            groups = await ExpenseService.GetUserGroupsAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ShowGroupDetails(GroupSummaryViewModel group)
+    {
+        selectedGroup = group;
+        loadingDetails = true;
+        
+        try 
+        {
+            // Cargar miembros, balances y desglose en paralelo
+            var membersTask = ExpenseService.GetGroupMembersAsync(group.Id);
+            var balancesTask = ExpenseService.GetGroupBalancesAsync(group.Id);
+            var breakdownTask = ExpenseService.GetGroupSpendingBreakdownAsync(group.Id);
+            
+            await Task.WhenAll(membersTask, balancesTask, breakdownTask);
+            
+            members = membersTask.Result;
+            balances = balancesTask.Result;
+            breakdown = breakdownTask.Result;
+        }
+        finally
+        {
+            loadingDetails = false;
+        }
+    }
+
+    private void CloseDetails()
+    {
+        selectedGroup = null;
+        members = null;
+        balances = null;
+    }
+
+    private void NavigateToCreateGroup() => Navigation.NavigateTo("/groups/new");
+    
+    private void NavigateToNewExpense()
+    {
+        if (selectedGroup != null)
+        {
+            Navigation.NavigateTo($"/expenses/new?groupId={selectedGroup.Id}");
+        }
+    }
+}

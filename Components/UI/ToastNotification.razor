@@ -1,0 +1,87 @@
+@using SplitMoney.Client.Services
+@implements IDisposable
+@inject IToastService ToastService
+
+<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x mb-4 px-3" style="z-index: 9999; pointer-events: none;">
+    <div class="toast-item @(isVisible ? "show" : "") @LevelClass" style="pointer-events: auto;">
+        <div class="d-flex align-items-center gap-3">
+            <span class="toast-icon">@Icon</span>
+            <span class="toast-message">@ToastService.Message</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .toast-container { transition: all 0.3s ease; }
+    
+    .toast-item {
+        background: var(--surface-container-highest);
+        color: var(--on-surface);
+        padding: 1rem 1.5rem;
+        border-radius: 1.25rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 1px solid var(--outline-variant);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        min-width: 280px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .toast-item.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .toast-item.success { border-left: 4px solid #4CAF50; }
+    .toast-item.error { border-left: 4px solid #F44336; }
+    .toast-item.warning { border-left: 4px solid #FF9800; }
+    
+    .toast-icon { font-size: 1.4rem; }
+    .toast-message { font-weight: 500; font-size: 0.95rem; }
+</style>
+
+@code {
+    private bool isVisible = false;
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += ShowToast;
+        ToastService.OnHide += HideToast;
+    }
+
+    private void ShowToast()
+    {
+        isVisible = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HideToast()
+    {
+        isVisible = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string LevelClass => ToastService.Level switch
+    {
+        ToastLevel.Success => "success",
+        ToastLevel.Error => "error",
+        ToastLevel.Warning => "warning",
+        _ => "info"
+    };
+
+    private string Icon => ToastService.Level switch
+    {
+        ToastLevel.Success => "✅",
+        ToastLevel.Error => "⚠️",
+        ToastLevel.Warning => "🚨",
+        _ => "ℹ️"
+    };
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= ShowToast;
+        ToastService.OnHide -= HideToast;
+    }
+}

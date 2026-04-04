@@ -1,0 +1,403 @@
+@page "/expenses/new"
+@using SplitMoney.Client.Services
+@using SplitMoney.Client.Models.ViewModels
+@using System.Security.Claims
+@attribute [Authorize]
+@inject NavigationManager Navigation
+@inject IExpenseService ExpenseService
+@inject IToastService ToastService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="container-fluid px-3 py-4 p-md-4" style="max-width: 900px; margin: 0 auto;" @onclick="CloseDropdowns">
+    
+    <!-- Header with Back Button -->
+    <div class="d-flex align-items-center mb-5 gap-3">
+        <button class="btn rounded-circle" style="background-color: var(--surface-container-highest); color: var(--on-surface); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--outline-variant);" @onclick="GoBack">
+            <span style="font-size: 1.2rem; transform: translateX(-1px);">⬅️</span>
+        </button>
+        <div>
+            <p class="mb-1" style="color: var(--on-surface-variant); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">Nuevo Registro</p>
+            <h1 class="brand-font m-0 h2-responsive">Cargar Nuevo Gasto</h1>
+        </div>
+    </div>
+
+    @if (loadingGroups)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Main Content Column -->
+            <div class="col-12 col-lg-7">
+                <div class="editorial-card shadow-lg p-4">
+                    
+                    <!-- Basic Info -->
+                    <div class="row g-3 mb-5">
+                        <div class="col-12">
+                            <label class="editorial-label">¿En qué grupo fue?</label>
+                            <select class="editorial-input" @bind="SelectedGroupId">
+                                <option value="" disabled>Selecciona un grupo...</option>
+                                @foreach (var g in userGroups)
+                                {
+                                    <option value="@g.Id">@g.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-8">
+                            <label class="editorial-label">Descripción</label>
+                            <input type="text" class="editorial-input" placeholder="Ej: Cena en Palermo" @bind="expense.Title" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="editorial-label">Monto Total ($)</label>
+                            <input type="number" class="editorial-input brand-font fw-bold" style="font-size: 1.25rem;" @bind="expense.TotalAmount" @bind:event="oninput" @onchange="DistributeEquallyIfFirstTime" />
+                        </div>
+                    </div>
+
+                    <!-- Category Selection -->
+                    <div class="mb-5 position-relative">
+                        <label class="editorial-label mb-3">Categoría</label>
+                        <div class="editorial-input d-flex align-items-center justify-content-between cursor-pointer" 
+                             @onclick="ToggleCategoryDropdown" @onclick:stopPropagation="true"
+                             style="border: 1.5px solid @(SelectedCategory?.ColorHex ?? "var(--outline-variant)"); transition: all 0.2s;">
+                            
+                            @if (SelectedCategory != null)
+                            {
+                                <div class="d-flex align-items-center gap-3">
+                                    <span style="font-size: 1.3rem;">@SelectedCategory.IconIdentifier</span>
+                                    <span class="fw-bold" style="color: var(--on-surface); font-size: 0.95rem;">@SelectedCategory.Name</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted fw-bold" style="color: var(--on-surface-variant) !important; font-size: 0.95rem;">Selecciona una categoría...</span>
+                            }
+                            
+                            <span style="transition: transform 0.2s; transform: rotate(@(isCategoryDropdownOpen ? "180deg" : "0deg")); font-size: 0.8rem; color: var(--on-surface-variant);">▼</span>
+                        </div>
+
+                        @if (isCategoryDropdownOpen)
+                        {
+                            <div class="position-absolute w-100 mt-2 shadow-lg rounded-4 custom-scrollbar" 
+                                 style="background: var(--surface-container-high); border: 1px solid var(--outline-variant); z-index: 100; max-height: 280px; overflow-y: auto; overflow-x: hidden;">
+                                @foreach (var cat in categories)
+                                {
+                                    <div class="p-3 d-flex align-items-center gap-3 category-option @(expense.CategoryId == cat.Id ? "active" : "")" 
+                                         @onclick="() => SelectCategory(cat.Id)" @onclick:stopPropagation="true">
+                                        <div style="background: @(cat.ColorHex)20; border: 1px solid @cat.ColorHex; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 1.2rem;">@cat.IconIdentifier</span>
+                                        </div>
+                                        <span class="fw-bold" style="font-size: 0.95rem; color: var(--on-surface);">@cat.Name</span>
+                                        @if (expense.CategoryId == cat.Id)
+                                        {
+                                            <span class="ms-auto" style="color: @cat.ColorHex;">✓</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- PAYERS SECTION -->
+                    <div class="mb-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <label class="editorial-label m-0">¿Quién pagó?</label>
+                            <span class="badge @(IsPaymentBalanced ? "bg-success" : "bg-warning")">
+                                Suma: @expense.Payments.Sum(p => p.Amount).ToString("C0") / @expense.TotalAmount.ToString("C0")
+                            </span>
+                        </div>
+                        
+                        <div class="table-responsive rounded-3 border border-secondary" style="background: var(--surface-container-low);">
+                            <table class="table table-dark table-hover mb-0 align-middle">
+                                <thead>
+                                    <tr style="font-size: 0.7rem; color: var(--on-surface-variant);">
+                                        <th class="ps-3 border-0">Miembro</th>
+                                        <th class="text-end pe-3 border-0" style="width: 150px;">Aportó ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in expense.Payments)
+                                    {
+                                        <tr>
+                                            <td class="ps-3 py-3 border-0">
+                                                <span style="font-weight: 500;">@p.UserName</span>
+                                            </td>
+                                            <td class="pe-3 py-3 border-0">
+                                                <input type="number" class="editorial-input text-end py-1 px-2" style="font-size: 0.9rem; height: 36px;" @bind="p.Amount" @bind:event="oninput" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SPLIT SECTION -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <label class="editorial-label m-0">¿Quiénes participaron?</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="ToggleAllSplits">Seleccionar todos</button>
+                        </div>
+
+                        <div class="row g-2">
+                            @foreach (var s in availableSplits)
+                            {
+                                <div class="col-6 col-md-4">
+                                    <div class="p-3 rounded-3 editorial-selection-card @(selectedSplits.Contains(s.UserId) ? "selected" : "") d-flex align-items-center gap-2 cursor-pointer" 
+                                         @onclick="() => ToggleSplit(s.UserId)">
+                                        <div class="form-check m-0">
+                                            <input class="form-check-input" type="checkbox" checked="@selectedSplits.Contains(s.UserId)" @onclick:stopPropagation />
+                                        </div>
+                                        <span class="text-truncate" style="font-size: 0.85rem;">@s.UserName</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <button class="editorial-button-primary w-100 py-3 mt-4" disabled="@(submitting || !CanSubmit)" @onclick="HandleSubmit">
+                        @if (submitting)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                        }
+                        else
+                        {
+                            <span>Cargar Gasto al Círculo 🚀</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary / Guide Column -->
+            <div class="col-12 col-lg-5">
+                <div class="editorial-card h-100 shadow-sm" style="background: var(--surface-container-low); border: 1px dashed var(--outline-variant);">
+                    <h3 class="brand-font mb-4" style="font-size: 1.2rem;">Resumen de División</h3>
+                    
+                    @if (expense.TotalAmount > 0 && selectedSplits.Any())
+                    {
+                        var splitVal = expense.TotalAmount / selectedSplits.Count;
+                        <div class="text-center mb-5 p-4 rounded-4" style="background: var(--surface-container-high);">
+                            <p class="mb-1" style="font-size: 0.8rem; color: var(--on-surface-variant);">Cada uno debe pagar:</p>
+                            <h2 class="brand-font display-6 m-0" style="color: var(--primary);">@splitVal.ToString("C0")</h2>
+                            <p class="mt-2 mb-0" style="font-size: 0.75rem;">Repartido entre @selectedSplits.Count personas</p>
+                        </div>
+
+                        <div class="divider mb-4" style="height: 1px; background: var(--outline-variant);"></div>
+
+                        <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--on-surface-variant); margin-bottom: 1.5rem;">Cuentas del Gasto</h4>
+                        
+                        @foreach (var p in expense.Payments)
+                        {
+                            var owed = selectedSplits.Contains(p.UserId) ? splitVal : 0;
+                            var diff = p.Amount - owed;
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span style="font-size: 0.9rem;">@p.UserName</span>
+                                <div class="text-end">
+                                    <span class="fw-bold" style="color: @(diff >= 0 ? "var(--primary)" : "#ff6b6b");">
+                                        @(diff > 0 ? "+" : "")@diff.ToString("C2")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 opacity-50">
+                            <p>Ingresa un monto y selecciona participantes para ver cálculos.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .category-option {
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .category-option:hover {
+        background: var(--surface-container-highest);
+    }
+
+    .category-option.active {
+        background: rgba(var(--primary-rgb), 0.1);
+        border-right: 3px solid var(--primary);
+    }
+
+
+    .custom-scrollbar::-webkit-scrollbar {
+        height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--outline-variant);
+        border-radius: 10px;
+    }
+</style>
+
+@code {
+    private CreateExpenseModel expense = new() { Title = "", TotalAmount = 0 };
+    private List<GroupSummaryViewModel> userGroups = new();
+    private List<CategoryDto> categories = new();
+    private List<GroupMemberResponse> currentGroupMembers = new();
+    private HashSet<string> selectedSplits = new();
+    private List<ExpensePaymentViewModel> availableSplits = new(); // Used just for the list
+    private bool loadingGroups = true;
+    private bool submitting = false;
+
+    private bool isCategoryDropdownOpen = false;
+    private CategoryDto? SelectedCategory => categories.FirstOrDefault(c => c.Id == expense.CategoryId);
+
+    private void ToggleCategoryDropdown()
+    {
+        isCategoryDropdownOpen = !isCategoryDropdownOpen;
+    }
+
+    private void SelectCategory(Guid categoryId)
+    {
+        expense.CategoryId = categoryId;
+        isCategoryDropdownOpen = false;
+    }
+
+    private void CloseDropdowns()
+    {
+        if (isCategoryDropdownOpen)
+        {
+            isCategoryDropdownOpen = false;
+        }
+    }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? GroupId { get; set; }
+
+    private string _selectedGroupId = "";
+    private string SelectedGroupId 
+    { 
+        get => _selectedGroupId; 
+        set {
+            if (_selectedGroupId != value) {
+                _selectedGroupId = value;
+                _ = LoadGroupMembers();
+            }
+        } 
+    }
+
+    private bool IsPaymentBalanced => Math.Abs(expense.Payments.Sum(p => p.Amount) - expense.TotalAmount) < 0.01m;
+    private bool CanSubmit => IsPaymentBalanced && expense.TotalAmount > 0 && !string.IsNullOrWhiteSpace(expense.Title) && selectedSplits.Any();
+
+    protected override async Task OnInitializedAsync()
+    {
+        userGroups = await ExpenseService.GetUserGroupsAsync();
+        categories = await ExpenseService.GetCategoriesAsync();
+        
+        if (!string.IsNullOrEmpty(GroupId) && userGroups.Any(g => g.Id == GroupId))
+        {
+            SelectedGroupId = GroupId;
+        }
+        else if (userGroups.Any())
+        {
+            SelectedGroupId = userGroups.First().Id;
+        }
+        loadingGroups = false;
+    }
+
+    private async Task LoadGroupMembers()
+    {
+        if (string.IsNullOrEmpty(SelectedGroupId)) return;
+        
+        currentGroupMembers = await ExpenseService.GetGroupMembersAsync(SelectedGroupId);
+        
+        // Initialize Payments list
+        expense.Payments = currentGroupMembers.Select(m => new ExpensePaymentViewModel {
+            UserId = m.UserId,
+            UserName = m.FullName,
+            Amount = 0
+        }).ToList();
+
+        // Initialize Split selection
+        availableSplits = currentGroupMembers.Select(m => new ExpensePaymentViewModel {
+            UserId = m.UserId,
+            UserName = m.FullName
+        }).ToList();
+        
+        selectedSplits = new HashSet<string>(currentGroupMembers.Select(m => m.UserId));
+        
+        expense.GroupId = SelectedGroupId;
+
+        // Auto-assign self as payer if possible
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var selfId = authState.User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == ClaimTypes.NameIdentifier)?.Value;
+        
+        if (selfId != null && expense.TotalAmount > 0) {
+            var selfPayment = expense.Payments.FirstOrDefault(p => p.UserId == selfId);
+            if (selfPayment != null) selfPayment.Amount = expense.TotalAmount;
+        }
+
+        StateHasChanged();
+    }
+
+    private void DistributeEquallyIfFirstTime()
+    {
+        // Simple logic: if only one payer currently has all, or they are all 0, assign to first?
+        // Actually, we'll let user put it or auto-assign to self
+    }
+
+    private void ToggleSplit(string userId)
+    {
+        if (selectedSplits.Contains(userId)) selectedSplits.Remove(userId);
+        else selectedSplits.Add(userId);
+    }
+
+    private void ToggleAllSplits()
+    {
+        if (selectedSplits.Count == currentGroupMembers.Count) selectedSplits.Clear();
+        else selectedSplits = new HashSet<string>(currentGroupMembers.Select(m => m.UserId));
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/");
+
+    private async Task HandleSubmit()
+    {
+        if (!CanSubmit) return;
+
+        submitting = true;
+        
+        // Prepare Splits
+        var splitVal = Math.Round(expense.TotalAmount / selectedSplits.Count, 2);
+        expense.Splits = selectedSplits.Select(uid => new ExpenseSplitViewModel {
+            UserId = uid,
+            Amount = splitVal
+        }).ToList();
+
+        // Keep only non-zero payments to clean the request
+        var finalPayments = expense.Payments.Where(p => p.Amount > 0).ToList();
+        var originalPayments = expense.Payments;
+        expense.Payments = finalPayments;
+
+        var success = await ExpenseService.CreateExpenseAsync(expense);
+        submitting = false;
+
+        if (success)
+        {
+            ToastService.ShowToast("¡Gasto multi-pagador registrado! 🚀", ToastLevel.Success);
+            await Task.Delay(500); 
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            expense.Payments = originalPayments; // Restore for UI if failed
+            ToastService.ShowToast("Error al registrar el gasto", ToastLevel.Error);
+        }
+    }
+}

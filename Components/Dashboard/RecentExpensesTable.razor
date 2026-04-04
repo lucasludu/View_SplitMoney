@@ -1,0 +1,133 @@
+@using SplitMoney.Client.Models.ViewModels
+
+<div class="editorial-card shadow-sm" style="padding: 1.5rem; border: 1px solid var(--outline-variant); background: var(--surface-container-low);">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+        <div>
+            <h3 class="m-0 brand-font" style="font-size: 1.4rem; letter-spacing: -0.02em;">Últimos Gastos</h3>
+            <p class="m-0" style="font-size: 0.75rem; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Actividad Reciente</p>
+        </div>
+        @if (Expenses != null && Expenses.Any())
+        {
+            <div class="d-flex gap-2 mb-1 overflow-auto pb-1" style="max-width: 100%;">
+                <button class="btn btn-filter @(selectedGroup == null ? "active" : "")" @onclick="() => selectedGroup = null">Todos</button>
+                @foreach (var group in GetGroups())
+                {
+                    <button class="btn btn-filter @(selectedGroup == group ? "active" : "")" @onclick="() => selectedGroup = group">@group</button>
+                }
+            </div>
+        }
+    </div>
+    
+    <div class="table-responsive">
+        @if (FilteredExpenses != null && FilteredExpenses.Any())
+        {
+            <table class="table table-dark table-hover mb-0 align-middle" style="--bs-table-bg: transparent; --bs-table-border-color: var(--outline-variant); font-size: 0.95rem;">
+                <thead>
+                    <tr style="color: var(--on-surface-variant); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;">
+                        <th class="border-0 pb-3 hide-on-mobile">Fecha</th>
+                        <th class="border-0 pb-3">Detalle</th>
+                        <th class="border-0 pb-3 hide-on-mobile">Círculo</th>
+                        <th class="border-0 pb-3 text-end">Importe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var exp in FilteredExpenses)
+                    {
+                        <tr style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-bottom: 0.5px solid rgba(255,255,255,0.05); cursor: pointer;" @onclick="() => OnExpenseSelected.InvokeAsync(exp.Id)">
+                            <td class="hide-on-mobile py-4" style="color: var(--on-surface-variant);">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="shadow-sm" style="width: 40px; height: 40px; border-radius: 12px; background-color: var(--surface-container-highest); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1.5px solid @exp.CategoryColor;">
+                                        @exp.CategoryIcon
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <span style="font-weight: 500; font-size: 0.9rem;">@exp.Date.ToString("dd MMM")</span>
+                                        <span class="d-md-none" style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">@exp.Date.ToString("t")</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-4">
+                                <div class="d-flex flex-column">
+                                    <span style="font-weight: 600; font-size: 1.05rem; color: var(--on-surface);">@exp.Description</span>
+                                    <span class="d-block d-md-none mt-1" style="font-size: 0.8rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 1.5px;">
+                                        <span style="opacity: 0.7;">👥</span> @exp.GroupName
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="hide-on-mobile py-4">
+                                <span class="badge" style="background-color: var(--surface-container-highest); color: var(--on-surface-variant); font-weight: 500; padding: 0.5rem 1rem; border-radius: 2rem; border: 1px solid var(--outline-variant); font-size: 0.8rem;">
+                                    @exp.GroupName
+                                </span>
+                            </td>
+                            <td class="text-end py-4">
+                                <span class="brand-font" style="font-weight: 700; font-size: 1.15rem; color: var(--primary);">@exp.Amount.ToString("C0")</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="text-center py-6 px-4" style="background: rgba(0,0,0,0.1); border-radius: 1.5rem; border: 1.5px dashed var(--outline-variant);">
+                <div class="mb-4 mx-auto" style="width: 80px; height: 80px; background: var(--surface-container-highest); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; opacity: 0.8; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                    📝
+                </div>
+                <h4 class="brand-font mb-2" style="font-size: 1.5rem; color: var(--on-surface);">Todo en orden por aquí</h4>
+                <p class="mx-auto mb-4" style="color: var(--on-surface-variant); max-width: 320px; line-height: 1.6; font-size: 0.95rem;">
+                    @(selectedGroup == null ? "Aún no hay gastos registrados este mes." : $"No hay gastos registrados en el grupo '{selectedGroup}'.")
+                </p>
+                @if (selectedGroup == null)
+                {
+                    <a href="/expenses/new" class="editorial-button-primary d-inline-flex align-items-center gap-2" style="width: auto; padding: 0.8rem 2rem; font-size: 0.9rem;">
+                        <span>Crear Mi Primer Gasto</span>
+                        <span style="font-size: 1.2rem;">🚀</span>
+                    </a>
+                }
+                else
+                {
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill" @onclick="() => selectedGroup = null">Ver todos los gastos</button>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .btn-filter {
+        background: var(--surface-container-highest);
+        color: var(--on-surface-variant);
+        border: 1px solid var(--outline-variant);
+        border-radius: 2rem;
+        padding: 0.4rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .btn-filter:hover {
+        background: var(--surface-container-high);
+        color: var(--on-surface);
+    }
+    .btn-filter.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public List<RecentExpenseViewModel> Expenses { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<Guid> OnExpenseSelected { get; set; }
+
+    private string? selectedGroup = null;
+
+    private IEnumerable<RecentExpenseViewModel> FilteredExpenses => 
+        selectedGroup == null ? Expenses : Expenses.Where(e => e.GroupName == selectedGroup);
+
+    private IEnumerable<string> GetGroups() => 
+        Expenses.Select(e => e.GroupName).Distinct().OrderBy(g => g);
+}
