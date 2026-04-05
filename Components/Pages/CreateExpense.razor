@@ -1,4 +1,5 @@
 @page "/expenses/new"
+@page "/expenses/edit/{ExpenseId:guid}"
 @using SplitMoney.Client.Services
 @using SplitMoney.Client.Models.ViewModels
 @using System.Security.Claims
@@ -7,6 +8,7 @@
 @inject IExpenseService ExpenseService
 @inject IToastService ToastService
 @inject AuthenticationStateProvider AuthStateProvider
+@using SplitMoney.Client.Components.Dashboard
 
 <div class="container-fluid px-3 py-4 p-md-4" style="max-width: 900px; margin: 0 auto;" @onclick="CloseDropdowns">
     
@@ -16,8 +18,8 @@
             <span style="font-size: 1.2rem; transform: translateX(-1px);">⬅️</span>
         </button>
         <div>
-            <p class="mb-1" style="color: var(--on-surface-variant); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">Nuevo Registro</p>
-            <h1 class="brand-font m-0 h2-responsive">Cargar Nuevo Gasto</h1>
+            <p class="mb-1" style="color: var(--on-surface-variant); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">@(ExpenseId.HasValue ? "Modificar" : "Nuevo") Registro</p>
+            <h1 class="brand-font m-0 h2-responsive">@(ExpenseId.HasValue ? "Editar Gasto" : "Cargar Nuevo Gasto")</h1>
         </div>
     </div>
 
@@ -74,7 +76,7 @@
                             }
                             else
                             {
-                                <span class="text-muted fw-bold" style="color: var(--on-surface-variant) !important; font-size: 0.95rem;">Selecciona una categoría...</span>
+                                <span class="text-editorial-muted fw-bold" style="color: var(--on-surface-variant) !important; font-size: 0.95rem;">Selecciona una categoría...</span>
                             }
                             
                             <span style="transition: transform 0.2s; transform: rotate(@(isCategoryDropdownOpen ? "180deg" : "0deg")); font-size: 0.8rem; color: var(--on-surface-variant);">▼</span>
@@ -139,20 +141,72 @@
                     <!-- SPLIT SECTION -->
                     <div class="mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <label class="editorial-label m-0">¿Quiénes participaron?</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="ToggleAllSplits">Seleccionar todos</button>
+                            <label class="editorial-label m-0">¿Cómo se divide?</label>
+                            <div class="d-flex gap-2 p-1 rounded-pill shadow-sm" style="background: var(--surface-container-high); border: 1px solid var(--outline-variant);">
+                                <button type="button" class="btn btn-sm rounded-pill px-3 @(expense.SelectedSplitType == SplitType.Equal ? "btn-primary" : "")" 
+                                        style="@(expense.SelectedSplitType == SplitType.Equal ? "" : "color: var(--on-surface-variant);")"
+                                        @onclick="() => SetSplitType(SplitType.Equal)">Equitativo</button>
+                                
+                                <button type="button" 
+                                        class="btn btn-sm rounded-pill px-3 @(expense.SelectedSplitType == SplitType.Exact ? "btn-primary" : "")" 
+                                        style="@(expense.SelectedSplitType == SplitType.Exact ? "" : "color: var(--on-surface-variant);")"
+                                        @onclick='() => TrySetPremiumSplit(SplitType.Exact)'>
+                                    Exacto @(!isPremium ? "👑" : "")
+                                </button>
+
+                                <button type="button" 
+                                        class="btn btn-sm rounded-pill px-3 @(expense.SelectedSplitType == SplitType.Percentage ? "btn-primary" : "")" 
+                                        style="@(expense.SelectedSplitType == SplitType.Percentage ? "" : "color: var(--on-surface-variant);")"
+                                        @onclick='() => TrySetPremiumSplit(SplitType.Percentage)'>
+                                    % @(!isPremium ? "👑" : "")
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="small m-0" style="color: var(--on-surface-variant); opacity: 1; font-weight: 500;">@(expense.SelectedSplitType == SplitType.Equal ? "Selecciona quiénes participan" : "Indica cuánto pone cada uno")</p>
+                            @if (expense.SelectedSplitType == SplitType.Equal)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="ToggleAllSplits" style="font-size: 0.75rem;">Seleccionar todos</button>
+                            }
+                            else if (expense.SelectedSplitType == SplitType.Exact)
+                            {
+                                <span class="badge @(IsSplitBalanced ? "bg-success" : "bg-warning")" style="font-size: 0.7rem;">
+                                    Asignado: @AssignedTotal.ToString("C0") / @expense.TotalAmount.ToString("C0")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge @(Math.Abs(TotalPercentage - 100) < 0.1m ? "bg-success" : "bg-warning")" style="font-size: 0.7rem;">
+                                    Total: @TotalPercentage.ToString("0")% / 100%
+                                </span>
+                            }
                         </div>
 
                         <div class="row g-2">
                             @foreach (var s in availableSplits)
                             {
-                                <div class="col-6 col-md-4">
-                                    <div class="p-3 rounded-3 editorial-selection-card @(selectedSplits.Contains(s.UserId) ? "selected" : "") d-flex align-items-center gap-2 cursor-pointer" 
+                                <div class="col-12">
+                                    <div class="p-3 rounded-4 editorial-selection-card @(selectedSplits.Contains(s.UserId) ? "selected" : "") d-flex align-items-center justify-content-between cursor-pointer" 
                                          @onclick="() => ToggleSplit(s.UserId)">
-                                        <div class="form-check m-0">
-                                            <input class="form-check-input" type="checkbox" checked="@selectedSplits.Contains(s.UserId)" @onclick:stopPropagation />
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="form-check m-0">
+                                                <input class="form-check-input" type="checkbox" checked="@selectedSplits.Contains(s.UserId)" @onclick:stopPropagation />
+                                            </div>
+                                            <span class="fw-600" style="font-size: 0.95rem;">@s.UserName</span>
                                         </div>
-                                        <span class="text-truncate" style="font-size: 0.85rem;">@s.UserName</span>
+                                        
+                                        @if (expense.SelectedSplitType != SplitType.Equal && selectedSplits.Contains(s.UserId))
+                                        {
+                                            <div class="d-flex align-items-center gap-2" @onclick:stopPropagation>
+                                                <span class="text-editorial-muted small">@(expense.SelectedSplitType == SplitType.Exact ? "$" : "%")</span>
+                                                <input type="number" 
+                                                       class="editorial-input py-1 px-2 text-end" 
+                                                       style="width: 100px; height: 32px; font-size: 0.9rem;" 
+                                                       @bind="s.Amount" 
+                                                       @bind:event="oninput" />
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             }
@@ -179,23 +233,42 @@
                     
                     @if (expense.TotalAmount > 0 && selectedSplits.Any())
                     {
-                        var splitVal = expense.TotalAmount / selectedSplits.Count;
                         <div class="text-center mb-5 p-4 rounded-4" style="background: var(--surface-container-high);">
-                            <p class="mb-1" style="font-size: 0.8rem; color: var(--on-surface-variant);">Cada uno debe pagar:</p>
-                            <h2 class="brand-font display-6 m-0" style="color: var(--primary);">@splitVal.ToString("C0")</h2>
-                            <p class="mt-2 mb-0" style="font-size: 0.75rem;">Repartido entre @selectedSplits.Count personas</p>
+                            @if (expense.SelectedSplitType == SplitType.Equal)
+                            {
+                                var splitVal = expense.TotalAmount / selectedSplits.Count;
+                                <p class="mb-1" style="font-size: 0.8rem; color: var(--on-surface-variant);">Cada uno debe pagar:</p>
+                                <h2 class="brand-font display-6 m-0" style="color: var(--primary);">@splitVal.ToString("C0")</h2>
+                            }
+                            else
+                            {
+                                <p class="mb-1" style="font-size: 0.8rem; color: var(--on-surface-variant);">Estado del Reparto:</p>
+                                <h2 class="brand-font display-6 m-0" style="color: @(IsSplitBalanced ? "var(--primary)" : "var(--error)")">
+                                    @(expense.SelectedSplitType == SplitType.Exact ? AssignedTotal.ToString("C0") : TotalPercentage.ToString("0") + "%")
+                                </h2>
+                                <p class="mt-2 mb-0" style="font-size: 0.75rem;">De @(expense.SelectedSplitType == SplitType.Exact ? expense.TotalAmount.ToString("C0") : "100%")</p>
+                            }
                         </div>
 
                         <div class="divider mb-4" style="height: 1px; background: var(--outline-variant);"></div>
 
                         <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--on-surface-variant); margin-bottom: 1.5rem;">Cuentas del Gasto</h4>
                         
-                        @foreach (var p in expense.Payments)
+                        @foreach (var p in availableSplits)
                         {
-                            var owed = selectedSplits.Contains(p.UserId) ? splitVal : 0;
-                            var diff = p.Amount - owed;
+                            var payment = expense.Payments.FirstOrDefault(pay => pay.UserId == p.UserId)?.Amount ?? 0;
+                            decimal owed = 0;
+
+                            if (selectedSplits.Contains(p.UserId))
+                            {
+                                if (expense.SelectedSplitType == SplitType.Equal) owed = expense.TotalAmount / selectedSplits.Count;
+                                else if (expense.SelectedSplitType == SplitType.Exact) owed = p.Amount;
+                                else owed = (p.Amount / 100m) * expense.TotalAmount;
+                            }
+
+                            var diff = payment - owed;
                             
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3 @(selectedSplits.Contains(p.UserId) ? "" : "opacity-50")">
                                 <span style="font-size: 0.9rem;">@p.UserName</span>
                                 <div class="text-end">
                                     <span class="fw-bold" style="color: @(diff >= 0 ? "var(--primary)" : "#ff6b6b");">
@@ -216,6 +289,11 @@
         </div>
     }
 </div>
+
+@if (showPaywall)
+{
+    <PremiumPaywall Title="@paywallTitle" OnClose="() => showPaywall = false" OnUpgrade="HandleUpgrade" />
+}
 
 <style>
     .category-option {
@@ -254,6 +332,27 @@
     private List<ExpensePaymentViewModel> availableSplits = new(); // Used just for the list
     private bool loadingGroups = true;
     private bool submitting = false;
+    private bool isPremium = false;
+    private bool showPaywall = false;
+    private string paywallTitle = "Repartos Pro";
+
+    private void TrySetPremiumSplit(SplitType type)
+    {
+        if (isPremium)
+        {
+            SetSplitType(type);
+        }
+        else
+        {
+            paywallTitle = "Repartos Pro";
+            showPaywall = true;
+        }
+    }
+
+    private void HandleUpgrade()
+    {
+        ToastService.ShowToast("Próximamente: Integración con suscripciones 💳", ToastLevel.Info);
+    }
 
     private bool isCategoryDropdownOpen = false;
     private CategoryDto? SelectedCategory => categories.FirstOrDefault(c => c.Id == expense.CategoryId);
@@ -278,6 +377,9 @@
     }
 
     [Parameter]
+    public Guid? ExpenseId { get; set; }
+
+    [Parameter]
     [SupplyParameterFromQuery]
     public string? GroupId { get; set; }
 
@@ -293,15 +395,84 @@
         } 
     }
 
+    private decimal AssignedTotal => availableSplits.Where(s => selectedSplits.Contains(s.UserId)).Sum(s => s.Amount);
+    private decimal TotalPercentage => availableSplits.Where(s => selectedSplits.Contains(s.UserId)).Sum(s => s.Amount);
+
+    private bool IsSplitBalanced {
+        get {
+            if (expense.SelectedSplitType == SplitType.Equal) return true;
+            if (expense.SelectedSplitType == SplitType.Exact) return Math.Abs(AssignedTotal - expense.TotalAmount) < 0.01m;
+            if (expense.SelectedSplitType == SplitType.Percentage) return Math.Abs(TotalPercentage - 100) < 0.1m;
+            return false;
+        }
+    }
+
     private bool IsPaymentBalanced => Math.Abs(expense.Payments.Sum(p => p.Amount) - expense.TotalAmount) < 0.01m;
-    private bool CanSubmit => IsPaymentBalanced && expense.TotalAmount > 0 && !string.IsNullOrWhiteSpace(expense.Title) && selectedSplits.Any();
+    private bool CanSubmit => IsPaymentBalanced && IsSplitBalanced && expense.TotalAmount > 0 && !string.IsNullOrWhiteSpace(expense.Title) && selectedSplits.Any();
+
+    private void SetSplitType(SplitType type)
+    {
+        expense.SelectedSplitType = type;
+        if (type == SplitType.Equal)
+        {
+            // Reset amounts
+            foreach (var s in availableSplits) s.Amount = 0;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isPremium = authState.User.IsInRole("PremiumUser");
+
         userGroups = await ExpenseService.GetUserGroupsAsync();
         categories = await ExpenseService.GetCategoriesAsync();
         
-        if (!string.IsNullOrEmpty(GroupId) && userGroups.Any(g => g.Id == GroupId))
+        if (ExpenseId.HasValue)
+        {
+            var detail = await ExpenseService.GetExpenseDetailsAsync(ExpenseId.Value);
+            if (detail != null)
+            {
+                expense.Title = detail.Description;
+                expense.TotalAmount = detail.TotalAmount;
+                expense.CategoryId = categories.FirstOrDefault(c => c.IconIdentifier == detail.CategoryIcon)?.Id;
+                
+                // Note: We need GroupId to load members. We search it by GroupName for now 
+                // if the API doesn't return GroupId in details. 
+                // Wait, ExpenseDetailViewModel might need GroupId?
+                // Or we find it in userGroups.
+                var group = userGroups.FirstOrDefault(g => g.Name == detail.GroupName);
+                if (group != null) SelectedGroupId = group.Id;
+
+                // We load members first via SelectedGroupId (it triggers LoadGroupMembers)
+                // BUT LoadGroupMembers initializes Payments to 0. 
+                // We must WAIT for it or do it manually.
+                await LoadGroupMembers();
+
+                // Now fill payments from detail
+                foreach (var p in expense.Payments)
+                {
+                    var detailPayment = detail.Payments.FirstOrDefault(dp => dp.UserName == p.UserName);
+                    if (detailPayment != null) p.Amount = detailPayment.Amount;
+                }
+
+                // Fill splits and types
+                expense.SelectedSplitType = detail.SplitType;
+                selectedSplits.Clear();
+                foreach (var ds in detail.Splits)
+                {
+                    var member = currentGroupMembers.FirstOrDefault(m => m.FullName == ds.UserName);
+                    if (member != null) 
+                    {
+                        selectedSplits.Add(member.UserId);
+                        // If it was exact or percentage, restore the value
+                        var splitInput = availableSplits.FirstOrDefault(s => s.UserId == member.UserId);
+                        if (splitInput != null) splitInput.Amount = ds.AmountOwed;
+                    }
+                }
+            }
+        }
+        else if (!string.IsNullOrEmpty(GroupId) && userGroups.Any(g => g.Id == GroupId))
         {
             SelectedGroupId = GroupId;
         }
@@ -373,31 +544,53 @@
 
         submitting = true;
         
-        // Prepare Splits
-        var splitVal = Math.Round(expense.TotalAmount / selectedSplits.Count, 2);
-        expense.Splits = selectedSplits.Select(uid => new ExpenseSplitViewModel {
-            UserId = uid,
-            Amount = splitVal
-        }).ToList();
+        // Prepare Splits based on type
+        if (expense.SelectedSplitType == SplitType.Equal)
+        {
+            var splitVal = Math.Round(expense.TotalAmount / selectedSplits.Count, 2);
+            expense.Splits = selectedSplits.Select(uid => new ExpenseSplitViewModel {
+                UserId = uid,
+                Amount = splitVal,
+                SplitType = SplitType.Equal
+            }).ToList();
+        }
+        else
+        {
+            expense.Splits = availableSplits
+                .Where(s => selectedSplits.Contains(s.UserId))
+                .Select(s => new ExpenseSplitViewModel {
+                    UserId = s.UserId,
+                    Amount = s.Amount,
+                    SplitType = expense.SelectedSplitType
+                }).ToList();
+        }
 
         // Keep only non-zero payments to clean the request
         var finalPayments = expense.Payments.Where(p => p.Amount > 0).ToList();
         var originalPayments = expense.Payments;
         expense.Payments = finalPayments;
 
-        var success = await ExpenseService.CreateExpenseAsync(expense);
+        bool success;
+        if (ExpenseId.HasValue)
+        {
+            success = await ExpenseService.UpdateExpenseAsync(ExpenseId.Value, expense);
+        }
+        else
+        {
+            success = await ExpenseService.CreateExpenseAsync(expense);
+        }
         submitting = false;
 
         if (success)
         {
-            ToastService.ShowToast("¡Gasto multi-pagador registrado! 🚀", ToastLevel.Success);
+            ToastService.ShowToast(ExpenseId.HasValue ? "¡Gasto actualizado! ✏️" : "¡Gasto multi-pagador registrado! 🚀", ToastLevel.Success);
             await Task.Delay(500); 
             Navigation.NavigateTo("/");
         }
         else
         {
             expense.Payments = originalPayments; // Restore for UI if failed
-            ToastService.ShowToast("Error al registrar el gasto", ToastLevel.Error);
+            ToastService.ShowToast("Error al procesar el gasto", ToastLevel.Error);
         }
     }
 }

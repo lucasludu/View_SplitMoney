@@ -4,16 +4,19 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
-    <div class="editorial-card" style="width: 100%; max-width: 400px;">
-        <div class="text-center mb-8">
-            <h1 class="brand-font" style="font-size: 2.5rem; color: var(--primary);">SplitMoney</h1>
-            <p style="color: var(--on-surface-variant);">Welcome back, Architect.</p>
+<div class="login-container d-flex align-items-center justify-content-center px-4" style="min-height: 100vh; background: radial-gradient(circle at top left, var(--primary-container), transparent 50%), radial-gradient(circle at bottom right, var(--surface-container-high), transparent 50%);">
+    <div class="glass-panel p-5 premium-modal-anim" style="width: 100%; max-width: 420px; border-radius: 3rem; background: rgba(var(--surface-container-rgb), 0.7); box-shadow: 0 32px 64px rgba(0,0,0,0.3); border: 1.5px solid rgba(255,255,255,0.05);">
+        <div class="text-center mb-5">
+            <div class="mb-4 mx-auto shadow-lg emerald-gradient" style="width: 72px; height: 72px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; transform: rotate(-8deg);">
+                💰
+            </div>
+            <h1 class="brand-font" style="font-size: 2.4rem; color: var(--on-surface);">SplitMoney</h1>
+            <p class="text-editorial-muted">Divide gastos, suma momentos.</p>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert alert-danger" style="background-color: var(--error-container); border: none; color: white; border-radius: 0.5rem;">
+            <div class="alert px-3 py-2 small mb-4" style="background-color: var(--error-container); border-left: 4px solid var(--error); color: white; border-radius: 0.75rem;">
                 @errorMessage
             </div>
         }
@@ -21,36 +24,42 @@
         <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
             <DataAnnotationsValidator />
 
-            <div class="editorial-input-group">
-                <label class="editorial-label">Email</label>
-                <InputText @bind-Value="loginModel.Email" class="editorial-input" placeholder="name@example.com" />
-                <ValidationMessage For="@(() => loginModel.Email)" />
+            <div class="mb-4">
+                <label class="editorial-label mb-2 px-1">Email</label>
+                <div class="position-relative">
+                    <span class="position-absolute translate-middle-y" style="top: 50%; left: 1.2rem; font-size: 1.1rem; opacity: 0.6;">✉️</span>
+                    <InputText @bind-Value="loginModel.Email" class="editorial-input pl-5 py-3 w-100" style="padding-left: 3.2rem; border-radius: 1.25rem;" placeholder="ejemplo@email.com" />
+                </div>
+                <ValidationMessage For="@(() => loginModel.Email)" class="small text-danger mt-1 px-1" />
             </div>
 
-            <div class="editorial-input-group">
-                <label class="editorial-label">Password</label>
-                <InputText @bind-Value="loginModel.Password" type="password" class="editorial-input" placeholder="••••••••" />
-                <ValidationMessage For="@(() => loginModel.Password)" />
+            <div class="mb-4">
+                <label class="editorial-label mb-2 px-1">Contraseña</label>
+                <div class="position-relative">
+                    <span class="position-absolute translate-middle-y" style="top: 50%; left: 1.2rem; font-size: 1.1rem; opacity: 0.6;">🔑</span>
+                    <InputText @bind-Value="loginModel.Password" type="password" class="editorial-input pl-5 py-3 w-100" style="padding-left: 3.2rem; border-radius: 1.25rem;" placeholder="••••••••" />
+                </div>
+                <ValidationMessage For="@(() => loginModel.Password)" class="small text-danger mt-1 px-1" />
             </div>
 
-            <div class="text-end mb-4">
-                <a href="/forgot-password" class="editorial-link" style="font-size: 0.875rem;">Forgot Password?</a>
+            <div class="text-end mb-5">
+                <a href="/forgot-password" class="text-primary text-decoration-none small fw-bold">¿Olvidaste tu contraseña?</a>
             </div>
 
-            <button type="submit" class="editorial-button-primary mb-4" disabled="@loading">
+            <button type="submit" class="editorial-button-primary emerald-gradient w-100 py-3 shadow-lg" disabled="@loading" style="font-size: 1.05rem;">
                 @if (loading)
                 {
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 }
                 else
                 {
-                    <span>Login</span>
+                    <span>Iniciar Sesión 🚀</span>
                 }
             </button>
 
-            <div class="text-center">
-                <p style="font-size: 0.875rem; color: var(--on-surface-variant);">
-                    New here? <a href="/register" class="editorial-link">Create an account</a>
+            <div class="text-center mt-5">
+                <p class="small text-editorial-muted">
+                    ¿Eres nuevo? <a href="/register" class="text-primary text-decoration-none fw-bold ms-1">Crea una cuenta</a>
                 </p>
             </div>
         </EditForm>

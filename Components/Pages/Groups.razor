@@ -4,6 +4,10 @@
 @attribute [Authorize]
 @inject IExpenseService ExpenseService
 @inject NavigationManager Navigation
+@inject IToastService ToastService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+@using SplitMoney.Client.Components.Dashboard
 
 <div class="container-fluid px-3 py-4 p-md-4" style="max-width: 800px; margin: 0 auto;">
     <!-- Header -->
@@ -63,6 +67,11 @@
     }
 </div>
 
+@if (showPaywall)
+{
+    <PremiumPaywall Title="@paywallTitle" OnClose="() => showPaywall = false" OnUpgrade="HandleUpgrade" />
+}
+
 <!-- Group Details Modal/Overlay -->
 @if (selectedGroup != null)
 {
@@ -97,7 +106,62 @@
                         </div>
                     </div>
 
-                    <!-- Breakdown List (The part from Stitch) -->
+                    <!-- Analytics Section (Premium) -->
+                    <div class="mb-5">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                             <h4 class="brand-font m-0 h6" style="text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-variant);">Distribución de Gastos @(!isPremium ? "👑" : "")</h4>
+                             @if (isPremium)
+                             {
+                                 <button class="btn btn-sm btn-outline-primary rounded-pill px-3" @onclick="HandleExport" disabled="@exporting" style="font-size: 0.75rem;">
+                                     @if (exporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                     <span>Excel 📄</span>
+                                 </button>
+                             }
+                        </div>
+
+                        @if (!isPremium)
+                        {
+                            <div class="p-4 rounded-4 text-center cursor-pointer" style="background: var(--surface-container-high); border: 1px dashed var(--primary);" @onclick='() => ShowPaywall("Analíticas Pro")'>
+                                <span style="font-size: 2rem;">📊</span>
+                                <p class="mt-2 mb-1 fw-bold">Desbloquea Estadísticas Visuales</p>
+                                <p class="text-editorial-muted small mb-0">Analiza en qué gasta el grupo con gráficos detallados.</p>
+                            </div>
+                        }
+                        else if (loadingSummary)
+                        {
+                            <div class="text-center py-4">
+                                <div class="spinner-border spinner-border-sm text-primary"></div>
+                            </div>
+                        }
+                        else if (spendingSummary != null && spendingSummary.Categories.Any())
+                        {
+                            <div class="row align-items-center">
+                                <div class="col-md-6 mb-4 mb-md-0">
+                                    <DonutChart Data="spendingSummary.Categories" Total="spendingSummary.TotalGroupSpending" Size="180" />
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach (var cat in spendingSummary.Categories.Take(5))
+                                        {
+                                            <div class="d-flex align-items-center justify-content-between small">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div style="width: 10px; height: 10px; border-radius: 50%; background: @cat.CategoryColor;"></div>
+                                                    <span class="text-editorial-muted">@cat.CategoryIcon @cat.CategoryName</span>
+                                                </div>
+                                                <span class="fw-bold">@cat.Percentage.ToString("0")%</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-center text-editorial-muted small">No hay suficientes gastos para generar estadísticas.</p>
+                        }
+                    </div>
+
+                    <!-- Breakdown List -->
                     <div class="mb-5">
                         <h5 class="section-label mb-3">DESGLOSE POR MIEMBRO</h5>
                         <div class="d-flex flex-column gap-2">
@@ -110,7 +174,7 @@
                                         </div>
                                         <div>
                                             <p class="m-0 fw-bold" style="font-size: 0.95rem;">@m.FullName</p>
-                                            <p class="m-0 small text-muted">@m.TransactionCount transacciones</p>
+                                            <p class="m-0 small text-editorial-muted">@m.TransactionCount transacciones</p>
                                         </div>
                                     </div>
                                     <div class="text-end">
@@ -126,8 +190,8 @@
                                         }
                                         else
                                         {
-                                            <p class="m-0 small text-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Al día</p>
-                                            <p class="m-0 fw-bold text-muted" style="font-size: 1.1rem;">$0</p>
+                                            <p class="m-0 small text-editorial-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Al día</p>
+                                            <p class="m-0 fw-bold text-editorial-muted" style="font-size: 1.1rem;">$0</p>
                                         }
                                     </div>
                                 </div>
@@ -150,7 +214,7 @@
                             <div class="text-center py-5 px-3 rounded-4" style="background: var(--surface-container-low); border: 1.5px dashed var(--outline-variant);">
                                 <span style="font-size: 2.5rem;">🎉</span>
                                 <p class="mt-3 mb-1 fw-bold h5 brand-font">¡Todo saldado!</p>
-                                <p class="small text-muted mb-0">Nadie le debe a nadie en este círculo.</p>
+                                <p class="small text-editorial-muted mb-0">Nadie le debe a nadie en este círculo.</p>
                             </div>
                         }
                         else
@@ -367,59 +431,118 @@
 
 @code {
     private List<GroupSummaryViewModel>? groups;
-    private bool isLoading = true;
-    
-    private GroupSummaryViewModel? selectedGroup;
+    private GroupSpendingBreakdownViewModel? breakdown;
     private List<GroupMemberResponse>? members;
     private List<BalanceResponse>? balances;
-    private GroupSpendingBreakdownViewModel? breakdown;
+    private GroupSpendingSummaryViewModel? spendingSummary;
+    private GroupSummaryViewModel? selectedGroup;
+    private bool isLoading = true;
     private bool loadingDetails = false;
+    private bool loadingSummary = false;
+    private bool exporting = false;
+    private bool isPremium = false;
+    private bool showPaywall = false;
+    private string paywallTitle = "Función Premium";
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
-        try
-        {
-            groups = await ExpenseService.GetUserGroupsAsync();
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isPremium = authState.User.IsInRole("PremiumUser");
+
+        groups = await ExpenseService.GetUserGroupsAsync();
+        isLoading = false;
     }
 
     private async Task ShowGroupDetails(GroupSummaryViewModel group)
     {
         selectedGroup = group;
         loadingDetails = true;
+        loadingSummary = true;
+        spendingSummary = null;
+
+        StateHasChanged();
         
         try 
         {
-            // Cargar miembros, balances y desglose en paralelo
+            var breakdownTask = ExpenseService.GetGroupSpendingBreakdownAsync(group.Id);
             var membersTask = ExpenseService.GetGroupMembersAsync(group.Id);
             var balancesTask = ExpenseService.GetGroupBalancesAsync(group.Id);
-            var breakdownTask = ExpenseService.GetGroupSpendingBreakdownAsync(group.Id);
+            var summaryTask = isPremium 
+                ? ExpenseService.GetGroupSpendingSummaryAsync(Guid.Parse(group.Id)) 
+                : Task.FromResult<GroupSpendingSummaryViewModel?>(null);
+
+            await Task.WhenAll(breakdownTask, membersTask, balancesTask, summaryTask);
             
-            await Task.WhenAll(membersTask, balancesTask, breakdownTask);
-            
+            breakdown = breakdownTask.Result;
             members = membersTask.Result;
             balances = balancesTask.Result;
-            breakdown = breakdownTask.Result;
+            spendingSummary = summaryTask.Result;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading group details: {ex.Message}");
         }
         finally
         {
             loadingDetails = false;
+            loadingSummary = false;
+            StateHasChanged();
         }
+    }
+    
+    private async Task HandleExport()
+    {
+        if (selectedGroup == null) return;
+        
+        exporting = true;
+        try
+        {
+            var data = await ExpenseService.ExportGroupReportAsync(Guid.Parse(selectedGroup.Id));
+            if (data != null)
+            {
+                var fileName = $"Reporte_{selectedGroup.Name}_{DateTime.Now:yyyyMMdd}.csv";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(data));
+                ToastService.ShowToast("Reporte descargado con éxito 📄", ToastLevel.Success);
+            }
+            else
+            {
+                ToastService.ShowToast("Error al generar el reporte", ToastLevel.Error);
+            }
+        }
+        finally
+        {
+            exporting = false;
+        }
+    }
+
+    private void ShowPaywall(string title)
+    {
+        paywallTitle = title;
+        showPaywall = true;
+    }
+
+    private void HandleUpgrade()
+    {
+        ToastService.ShowToast("Próximamente: Integración con pasarela de pago 💳", ToastLevel.Info);
     }
 
     private void CloseDetails()
     {
         selectedGroup = null;
         members = null;
-        balances = null;
+        breakdown = null;
+        spendingSummary = null;
     }
-
-    private void NavigateToCreateGroup() => Navigation.NavigateTo("/groups/new");
+    
+    private void NavigateToCreateGroup() 
+    {
+        if (!isPremium && groups?.Count >= 3)
+        {
+            ShowPaywall("Límite de Grupos Alcanzado");
+            return;
+        }
+        Navigation.NavigateTo("/groups/new");
+    }
     
     private void NavigateToNewExpense()
     {

@@ -64,7 +64,7 @@ public class ExpenseService : IExpenseService
             TotalAmount = expense.TotalAmount,
             GroupId = expense.GroupId,
             CategoryId = expense.CategoryId,
-            Splits = expense.Splits.Select(s => new { UserId = s.UserId, Amount = s.Amount }).ToList(),
+            Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
             Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
         };
 
@@ -161,6 +161,28 @@ public class ExpenseService : IExpenseService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> UpdateExpenseAsync(Guid id, CreateExpenseModel expense)
+    {
+        var request = new 
+        {
+            Id = id,
+            Title = expense.Title,
+            TotalAmount = expense.TotalAmount,
+            GroupId = expense.GroupId,
+            CategoryId = expense.CategoryId,
+            Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList()
+        };
+
+        var response = await _httpClient.PutAsJsonAsync($"api/v1/expenses/{id}", request);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteExpenseAsync(Guid id)
+    {
+        var response = await _httpClient.DeleteAsync($"api/v1/expenses/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<List<CategoryDto>> GetCategoriesAsync()
     {
         try
@@ -177,5 +199,49 @@ public class ExpenseService : IExpenseService
         {
             return new List<CategoryDto>();
         }
+    }
+
+    public async Task<ExpenseAuditViewModel?> GetExpenseAuditAsync(Guid expenseId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/v1/expenses/{expenseId}/audit");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<Response<ExpenseAuditViewModel>>();
+                return result?.Data;
+            }
+            return null;
+        }
+        catch { return null; }
+    }
+
+    public async Task<GroupSpendingSummaryViewModel?> GetGroupSpendingSummaryAsync(Guid groupId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/v1/expenses/groups/{groupId}/summary");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<Response<GroupSpendingSummaryViewModel>>();
+                return result?.Data;
+            }
+            return null;
+        }
+        catch { return null; }
+    }
+
+    public async Task<byte[]?> ExportGroupReportAsync(Guid groupId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/v1/expenses/groups/{groupId}/export");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+            return null;
+        }
+        catch { return null; }
     }
 }

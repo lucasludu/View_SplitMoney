@@ -1,0 +1,43 @@
+@using SplitMoney.Client.Models.ViewModels
+
+<div class="donut-chart-container" style="position: relative; width: @(Size)px; height: @(Size)px; margin: 0 auto;">
+    <svg viewBox="0 0 42 42" class="donut" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+        <circle class="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="transparent"></circle>
+        <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--outline-variant)" stroke-width="3"></circle>
+        
+        @{
+            double cumulativePercent = 0;
+            foreach (var item in Data.OrderByDescending(x => x.Percentage))
+            {
+                var strokeDashArray = $"{(item.Percentage)} @(100 - item.Percentage)";
+                var strokeDashOffset = -cumulativePercent;
+                
+                <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" 
+                        fill="transparent" 
+                        stroke="@item.CategoryColor" 
+                        stroke-width="5" 
+                        stroke-dasharray="@strokeDashArray" 
+                        stroke-dashoffset="@strokeDashOffset"
+                        style="transition: stroke-dashoffset 0.5s ease-in-out;"></circle>
+                
+                cumulativePercent += item.Percentage;
+            }
+        }
+    </svg>
+    
+    <div class="donut-content" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+        <span class="text-editorial-muted" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600;">Total</span>
+        <span class="brand-font" style="font-size: @(Size/10)px; color: var(--on-surface);">@Total.ToString("C0")</span>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<CategorySpendingViewModel> Data { get; set; } = new();
+
+    [Parameter]
+    public decimal Total { get; set; }
+
+    [Parameter]
+    public int Size { get; set; } = 220;
+}

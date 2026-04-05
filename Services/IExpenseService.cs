@@ -13,5 +13,10 @@ public interface IExpenseService
     Task<GroupSpendingBreakdownViewModel?> GetGroupSpendingBreakdownAsync(string groupId);
     Task<ExpenseDetailViewModel?> GetExpenseDetailsAsync(Guid expenseId);
     Task<bool> SettleDebtAsync(SettleDebtModel settlement);
+    Task<bool> UpdateExpenseAsync(Guid id, CreateExpenseModel expense);
+    Task<bool> DeleteExpenseAsync(Guid id);
     Task<List<CategoryDto>> GetCategoriesAsync();
+    Task<ExpenseAuditViewModel?> GetExpenseAuditAsync(Guid expenseId);
+    Task<GroupSpendingSummaryViewModel?> GetGroupSpendingSummaryAsync(Guid groupId);
+    Task<byte[]?> ExportGroupReportAsync(Guid groupId);
 }
