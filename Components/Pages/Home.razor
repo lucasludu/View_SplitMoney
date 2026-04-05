@@ -10,19 +10,19 @@
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 
-<div class="container-fluid px-3 py-4 p-md-4" style="max-width: 1200px; margin: 0 auto;">
+<div class="container-fluid px-3 py-4 p-md-4 container-max">
     <!-- Welcome Header -->
     <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
         <div class="mb-0" style="min-width: 0;">
-            <p class="mb-1" style="color: var(--on-surface-variant); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">Master Perspective</p>
-            <h1 class="brand-font m-0 h1-responsive text-truncate" style="word-break: break-all;">Hola, <span style="color: var(--primary);">@userName</span></h1>
+            <p class="mb-1 perspective-label">Master Perspective</p>
+            <h1 class="brand-font m-0 h1-responsive text-truncate home-title">Hola, <span>@userName</span></h1>
         </div>
         <div class="d-flex align-items-center gap-2 flex-shrink-0 mt-1">
-            <button class="btn rounded-circle shadow-sm" style="background-color: var(--surface-container-highest); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--outline-variant); transition: transform 0.2s;" @onclick="ShowTipModal" title="Tip del mes">
-                <span style="font-size: 1.3rem; line-height: 1;">💡</span>
+            <button class="btn rounded-circle shadow-sm circle-btn-container" @onclick="ShowTipModal" title="Tip del mes">
+                <span>💡</span>
             </button>
             <div class="hide-on-mobile">
-                <span class="badge rounded-pill" style="background-color: var(--surface-container-highest); color: var(--on-surface); padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.85rem; border: 1px solid var(--outline-variant);">Architect Staff</span>
+                <span class="badge rounded-pill architect-badge">Architect Staff</span>
             </div>
         </div>
     </div>
@@ -48,12 +48,12 @@
     {
         @if (IsDashboardEmpty())
         {
-            <div class="editorial-card text-center py-6 px-4 mb-4 shadow-lg border-primary" style="background: linear-gradient(145deg, var(--surface-container-low), var(--surface-container-high)); border: 1.5px dashed var(--primary); opacity: 0.9;">
-                <div class="mb-4 mx-auto" style="width: 100px; height: 100px; background: var(--surface-container-highest); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 2px solid var(--primary);">
+            <div class="editorial-card text-center py-6 px-4 mb-4 shadow-lg border-primary empty-dashboard-card">
+                <div class="mb-4 mx-auto empty-dashboard-icon-box">
                     💰
                 </div>
-                <h2 class="brand-font mb-3" style="font-size: 2.2rem; color: var(--on-surface);">¡Bienvenido a SplitMoney!</h2>
-                <p class="mx-auto mb-5" style="color: var(--on-surface-variant); max-width: 480px; line-height: 1.7; font-size: 1.1rem;">
+                <h2 class="brand-font mb-3 empty-dashboard-title">¡Bienvenido a SplitMoney!</h2>
+                <p class="mx-auto mb-5 empty-dashboard-text">
                     Empieza a dividir tus gastos con amigos y familiares de forma inteligente. Crea tu primer círculo o registra un gasto para ver tus balances aquí.
                 </p>
                 <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
@@ -82,8 +82,8 @@
     }
     else if (!isLoading && dashboard == null)
     {
-        <div class="editorial-card text-center py-6 px-4 mb-4 shadow-lg" style="border: 1.5px solid var(--error-container);">
-            <div class="mb-4 mx-auto" style="width: 80px; height: 80px; background: var(--error-container); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white;">
+        <div class="editorial-card text-center py-6 px-4 mb-4 shadow-lg error-card">
+            <div class="mb-4 mx-auto error-icon-box">
                 ❌
             </div>
             <h2 class="brand-font mb-2" style="font-size: 1.5rem; color: var(--on-surface);">Error de Conexión</h2>
@@ -103,21 +103,21 @@
     <div class="details-overlay" @onclick="CloseExpenseDetail">
         <div class="details-panel shadow-lg" @onclick:stopPropagation="true">
             <!-- Header -->
-            <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between" style="background: var(--surface-container-high); border-color: var(--outline-variant) !important;">
+            <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between panel-header">
                 <div class="d-flex align-items-center gap-3">
                     <div style="background: @(selectedExpense.CategoryColor)20; border: 1.5px solid @selectedExpense.CategoryColor; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;">
                         <span style="font-size: 1.5rem;">@selectedExpense.CategoryIcon</span>
                     </div>
                     <div>
-                        <h5 class="brand-font m-0" style="font-size: 1.1rem; color: var(--on-surface);">@selectedExpense.Description</h5>
+                        <h5 class="brand-font m-0 panel-title">@selectedExpense.Description</h5>
                         <p class="small text-editorial-muted m-0">@selectedExpense.Date.ToString("d MMM yyyy") en @selectedExpense.GroupName</p>
                     </div>
                 </div>
-                <button class="btn btn-sm rounded-circle p-1" @onclick="CloseExpenseDetail" style="background: var(--surface-container-highest); color: var(--on-surface-variant); width: 32px; height: 32px;">✕</button>
+                <button class="btn btn-sm rounded-circle p-1 panel-close-btn" @onclick="CloseExpenseDetail">✕</button>
             </div>
 
             <!-- Tab Selector -->
-            <div class="px-4 border-bottom d-flex gap-4" style="background: var(--surface-container-low); border-color: var(--outline-variant) !important;">
+            <div class="px-4 border-bottom d-flex gap-4 tab-selector-container">
                 <button class="btn btn-link px-0 py-2 text-decoration-none border-bottom border-3 @(!showAudit ? "border-primary fw-bold text-primary" : "border-transparent")" 
                         style="font-size: 0.85rem; @(!showAudit ? "" : "color: var(--on-surface-variant);")" 
                         @onclick="() => showAudit = false">Detalles</button>
@@ -131,8 +131,8 @@
             <div class="p-4" style="max-height: 60vh; overflow-y: auto;">
                 @if (!showAudit)
                 {
-                    <div class="mb-4 text-center p-4 rounded-4" style="background: linear-gradient(145deg, var(--surface-container-high), var(--surface-container-low)); border: 1px solid var(--outline-variant);">
-                        <p class="text-editorial-muted small mb-1" style="text-transform: uppercase; letter-spacing: 0.05em;">Monto Total</p>
+                    <div class="mb-4 text-center p-4 rounded-4 amount-hero-box">
+                        <p class="text-editorial-muted small mb-1 amount-hero-label">Monto Total</p>
                         <h2 class="brand-font display-5 m-0" style="color: var(--primary);">@selectedExpense.TotalAmount.ToString("C2")</h2>
                     </div>
 
@@ -148,9 +148,9 @@
                                 <div class="balance-item p-3 mb-2 d-flex justify-content-between align-items-center" style="background: rgba(16, 185, 129, 0.03);">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="member-avatar" style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant);">@payment.UserName.Substring(0, 1).ToUpper()</div>
-                                        <span class="fw-bold" style="font-size: 0.95rem; text-transform: capitalize;">@payment.UserName</span>
+                                        <span class="fw-bold member-row-info">@payment.UserName</span>
                                     </div>
-                                    <div class="amount-badge bg-success text-white border-0" style="font-size: 0.85rem;">
+                                    <div class="amount-badge bg-success text-white border-0">
                                         + @payment.Amount.ToString("C0")
                                     </div>
                                 </div>
@@ -170,9 +170,9 @@
                                 <div class="balance-item p-3 mb-2 d-flex justify-content-between align-items-center" style="opacity: @(split.AmountOwed > 0 ? "1" : "0.6"); background: rgba(239, 68, 68, 0.03);">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="member-avatar" style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant);">@split.UserName.Substring(0, 1).ToUpper()</div>
-                                        <span style="font-size: 0.95rem; text-transform: capitalize;">@split.UserName</span>
+                                        <span class="member-row-info">@split.UserName</span>
                                     </div>
-                                    <div class="amount-badge @(split.AmountOwed > 0 ? "bg-danger text-white" : "bg-secondary-subtle text-editorial-muted") border-0" style="font-size: 0.85rem;">
+                                    <div class="amount-badge @(split.AmountOwed > 0 ? "bg-danger text-white" : "bg-secondary-subtle text-editorial-muted") border-0">
                                         @split.AmountOwed.ToString("C0")
                                     </div>
                                 </div>
@@ -193,28 +193,28 @@
                                 var owed = selectedExpense.Splits.Where(s => s.UserName == memberName).Sum(s => s.AmountOwed);
                                 var diff = paid - owed;
 
-                                <div class="balance-item p-3 mb-2 d-flex justify-content-between align-items-center" style="background: var(--surface-container-high); border: 1px solid @(diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "var(--outline-variant)"); border-radius: 1rem; border-width: 1px 1px 1px 5px;">
+                                <div class="balance-item p-3 mb-2 d-flex justify-content-between align-items-center final-balance-card" style="border: 1px solid @(diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "var(--outline-variant)");">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="member-avatar" style="background: @(diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "var(--surface-container-highest)"); color: white;">@memberName.Substring(0, 1).ToUpper()</div>
                                         <div>
-                                            <p class="m-0 fw-bold" style="font-size: 0.95rem; text-transform: capitalize;">@memberName</p>
+                                            <p class="m-0 fw-bold member-row-info">@memberName</p>
                                             <p class="m-0 x-small text-editorial-muted" style="font-size: 0.7rem;">Puso @paid.ToString("C0") / Gasto @owed.ToString("C0")</p>
                                         </div>
                                     </div>
                                     <div class="text-end">
                                         @if (diff > 0)
                                         {
-                                            <p class="m-0 small text-success fw-bold text-uppercase" style="font-size: 0.6rem;">A recibir</p>
-                                            <p class="m-0 fw-bold text-success" style="font-size: 1.1rem;">+@diff.ToString("C0")</p>
+                                            <p class="m-0 small text-success fw-bold text-uppercase balance-diff-label">A recibir</p>
+                                            <p class="m-0 fw-bold text-success balance-diff-value">+@diff.ToString("C0")</p>
                                         }
                                         else if (diff < 0)
                                         {
-                                            <p class="m-0 small text-danger fw-bold text-uppercase" style="font-size: 0.6rem;">Debe poner</p>
-                                            <p class="m-0 fw-bold text-danger" style="font-size: 1.1rem;">@diff.ToString("C0")</p>
+                                            <p class="m-0 small text-danger fw-bold text-uppercase balance-diff-label">Debe poner</p>
+                                            <p class="m-0 fw-bold text-danger balance-diff-value">@diff.ToString("C0")</p>
                                         }
                                         else
                                         {
-                                            <p class="m-0 fw-bold text-editorial-muted" style="font-size: 1.1rem;">$0</p>
+                                            <p class="m-0 fw-bold text-editorial-muted balance-diff-value">$0</p>
                                         }
                                     </div>
                                 </div>
@@ -283,89 +283,6 @@
 }
 
 <MonthlyTipModal IsOpen="isTipModalOpen" OnClose="CloseTipModal" />
-
-<style>
-    /* Custom Scrollbar for Premium Feel */
-    .custom-scroll::-webkit-scrollbar {
-        width: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-        background: var(--outline-variant);
-        border-radius: 10px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb:hover {
-        background: var(--on-surface-variant);
-    }
-
-    .details-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.75); backdrop-filter: blur(10px);
-        z-index: 2000; display: flex; justify-content: center; align-items: flex-end;
-    }
-    .details-panel {
-        width: 100%; max-width: 500px; background: var(--surface-container-lowest);
-        border-radius: 2rem 2rem 0 0; max-height: 85vh;
-        animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        display: flex; flex-direction: column; border: 1px solid var(--outline-variant);
-    }
-    @@keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .btn-close-custom {
-        background: var(--surface-container-highest); border: none; width: 36px; height: 36px;
-        border-radius: 50%; color: var(--on-surface); display: flex; align-items: center; justify-content: center;
-        font-weight: bold; transition: transform 0.2s;
-    }
-    .section-label { font-size: 0.7rem; letter-spacing: 0.15em; color: var(--on-surface-variant); font-weight: 800; opacity: 0.7; }
-    .balance-item { background: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: 1rem; }
-    .member-avatar { width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-    .amount-badge { padding: 4px 12px; border-radius: 100px; font-weight: 700; font-size: 0.85rem; }
-
-    @@media (min-width: 768px) {
-        .details-overlay { align-items: center; padding: 2rem; }
-        .details-panel { border-radius: 2rem; }
-    }
-
-    .skeleton {
-        background: linear-gradient(90deg, 
-            var(--surface-container-high) 25%, 
-            var(--surface-container-highest) 50%, 
-            var(--surface-container-high) 75%);
-        background-size: 200% 100%;
-        animation: loading-shimmer 1.5s infinite;
-        border: 1px solid var(--outline-variant);
-    }
-
-    @@keyframes loading-shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-    /* Audit Timeline Styles */
-    .audit-timeline {
-        border-left: 2px solid var(--outline-variant);
-        margin-left: 10px;
-    }
-
-    .audit-item {
-        position: relative;
-    }
-
-    .audit-marker {
-        position: absolute;
-        left: -29px;
-        top: 2px;
-        width: 12px;
-        height: 12px;
-        background: var(--primary);
-        border: 2px solid var(--surface-container-high);
-        border-radius: 50%;
-    }
-
-    .border-transparent {
-        border-bottom-color: transparent !important;
-    }
-</style>
 
 @code {
     private string userName = "User";

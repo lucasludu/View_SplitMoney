@@ -1,0 +1,85 @@
+/* CSS Isolation for Register.razor */
+
+.register-page-wrapper {
+    min-height: 100vh;
+    background: radial-gradient(circle at top left, var(--primary-container), transparent 50%), 
+                radial-gradient(circle at bottom right, var(--surface-container-high), transparent 50%);
+}
+
+.register-box {
+    width: 100%;
+    max-width: 480px;
+    padding: 2.5rem;
+}
+
+.register-title {
+    font-size: 2.5rem;
+    color: var(--primary);
+}
+
+.register-subtitle {
+    color: var(--on-surface-variant);
+}
+
+.register-error-alert {
+    background-color: var(--error-container);
+    border: none;
+    color: white;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.error-list {
+    margin-top: 5px;
+    padding-left: 15px;
+}
+
+.footer-text {
+    font-size: 0.875rem;
+    color: var(--on-surface-variant);
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    z-index: 10;
+    pointer-events: none;
+    line-height: 1;
+}
+
+.input-wrapper ::deep .editorial-input {
+    padding-left: 3.75rem !important;
+    padding-right: 3.75rem !important;
+    transition: all 0.3s ease;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 1.25rem;
+    background: none;
+    border: none;
+    color: var(--on-surface-variant);
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle-btn:hover {
+    transform: scale(1.1);
+    color: var(--primary);
+}

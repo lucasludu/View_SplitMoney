@@ -1,0 +1,177 @@
+/* CSS Isolation for SettleDebt.razor */
+
+.settle-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.back-btn-box {
+    background-color: var(--surface-container-highest); 
+    color: var(--on-surface); 
+    width: 44px; 
+    height: 44px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 1px solid var(--outline-variant); 
+    transition: all 0.2s;
+}
+
+.back-icon-mini {
+    font-size: 1.2rem; 
+    transform: translateX(-1px);
+}
+
+.header-sub-label {
+    color: var(--on-surface-variant); 
+    font-size: 0.7rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.12em; 
+    font-weight: 600;
+}
+
+.page-main-title {
+    letter-spacing: -0.02em;
+}
+
+.up-to-date-box {
+    background: linear-gradient(145deg, var(--surface-container-low), var(--surface-container-high)); 
+    border: 1px dashed var(--outline-variant); 
+    margin-top: 2rem;
+}
+
+.up-to-date-icon {
+    width: 80px; 
+    height: 80px; 
+    background: rgba(37, 99, 235, 0.1); 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2.5rem;
+}
+
+.up-to-date-text {
+    color: var(--on-surface-variant); 
+    max-width: 400px; 
+    line-height: 1.6; 
+    font-size: 0.9rem;
+}
+
+.section-header-label {
+    color: var(--on-surface-variant); 
+    font-size: 0.75rem; 
+    font-weight: 700; 
+    letter-spacing: 0.05em;
+}
+
+.debt-card-item {
+    border-left: 4px solid #ef4444; 
+    background: var(--surface-container-high);
+}
+
+.creditor-avatar-box {
+    background: var(--surface-container-highest); 
+    color: var(--on-surface); 
+    border: 1px solid var(--outline-variant); 
+    width: 44px; 
+    height: 44px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border-radius: 12px; 
+    font-weight: 700;
+}
+
+.creditor-name-txt {
+    font-size: 0.95rem;
+}
+
+.group-name-micro {
+    font-size: 0.7rem;
+}
+
+.debt-amount-txt {
+    font-size: 1.1rem;
+}
+
+.settle-btn-mini {
+    font-size: 0.65rem; 
+    font-weight: 800; 
+    letter-spacing: 0.02em;
+}
+
+.settle-modal-overlay {
+    background: rgba(0,0,0,0.85); 
+    backdrop-filter: blur(8px); 
+    z-index: 2000;
+}
+
+.settlement-form-panel {
+    max-width: 500px; 
+    border: 1px solid var(--outline-variant); 
+    border-radius: 2rem;
+}
+
+.payment-confirm-icon {
+    width: 72px; 
+    height: 72px; 
+    background: linear-gradient(135deg, var(--primary), #8E2DE2); 
+    border-radius: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2.2rem; 
+    transform: rotate(-5deg); 
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+}
+
+.confirm-payment-label {
+    font-size: 0.8rem; 
+    font-weight: 600;
+}
+
+.amount-input-box {
+    background: var(--surface-container-lowest); 
+    border: 1px solid var(--outline-variant);
+}
+
+.amount-currency-symbol {
+    font-size: 1.8rem; 
+    color: var(--primary); 
+    margin-right: 0.5rem; 
+    opacity: 0.7;
+}
+
+.amount-big-input {
+    background: transparent; 
+    border: none; 
+    color: white; 
+    font-size: 3rem; 
+    width: 70%; 
+    outline: none;
+}
+
+.payment-method-label {
+    font-size: 0.75rem;
+}
+
+.payment-selection-item {
+    cursor: pointer; 
+    border-radius: 1rem !important;
+}
+
+.cancel-modal-btn {
+    background: var(--surface-container-highest); 
+    color: var(--on-surface); 
+    font-size: 0.9rem;
+}
+
+@keyframes scale-up-center {
+    0% { transform: scale(0.5); }
+    100% { transform: scale(1); }
+}
+
+.scale-up-center {
+    animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+}

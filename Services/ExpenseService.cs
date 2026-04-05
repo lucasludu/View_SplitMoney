@@ -17,23 +17,14 @@ public class ExpenseService : IExpenseService
 
     public async Task<DashboardViewModel?> GetDashboardAsync()
     {
-        try 
+        var response = await _httpClient.GetAsync("api/v1/expenses/dashboard");
+        if (response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync("api/v1/expenses/dashboard");
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<Response<DashboardViewModel>>();
-                return result?.Data; // Devolvemos null si result?.Data es null
-            }
-            
-            _toastService.ShowToast($"Error de servidor: {response.StatusCode}", ToastLevel.Error);
-            return null;
+            var result = await response.Content.ReadFromJsonAsync<Response<DashboardViewModel>>();
+            return result?.Data;
         }
-        catch (Exception ex)
-        {
-            _toastService.ShowToast($"Error de conexión: {ex.Message}", ToastLevel.Error);
-            return null;
-        }
+        
+        return null;
     }
 
     public async Task<List<GroupSummaryViewModel>> GetUserGroupsAsync()

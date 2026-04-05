@@ -4,19 +4,19 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="login-container d-flex align-items-center justify-content-center px-4" style="min-height: 100vh; background: radial-gradient(circle at top left, var(--primary-container), transparent 50%), radial-gradient(circle at bottom right, var(--surface-container-high), transparent 50%);">
-    <div class="glass-panel p-5 premium-modal-anim" style="width: 100%; max-width: 420px; border-radius: 3rem; background: rgba(var(--surface-container-rgb), 0.7); box-shadow: 0 32px 64px rgba(0,0,0,0.3); border: 1.5px solid rgba(255,255,255,0.05);">
+<div class="login-page-wrapper d-flex align-items-center justify-content-center px-4">
+    <div class="glass-panel p-5 premium-modal-anim login-box">
         <div class="text-center mb-5">
-            <div class="mb-4 mx-auto shadow-lg emerald-gradient" style="width: 72px; height: 72px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; transform: rotate(-8deg);">
+            <div class="mb-4 mx-auto shadow-lg emerald-gradient logo-box">
                 💰
             </div>
-            <h1 class="brand-font" style="font-size: 2.4rem; color: var(--on-surface);">SplitMoney</h1>
+            <h1 class="brand-font app-title">SplitMoney</h1>
             <p class="text-editorial-muted">Divide gastos, suma momentos.</p>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert px-3 py-2 small mb-4" style="background-color: var(--error-container); border-left: 4px solid var(--error); color: white; border-radius: 0.75rem;">
+            <div class="alert px-3 py-2 small mb-4 error-alert">
                 @errorMessage
             </div>
         }
@@ -26,18 +26,21 @@
 
             <div class="mb-4">
                 <label class="editorial-label mb-2 px-1">Email</label>
-                <div class="position-relative">
-                    <span class="position-absolute translate-middle-y" style="top: 50%; left: 1.2rem; font-size: 1.1rem; opacity: 0.6;">✉️</span>
-                    <InputText @bind-Value="loginModel.Email" class="editorial-input pl-5 py-3 w-100" style="padding-left: 3.2rem; border-radius: 1.25rem;" placeholder="ejemplo@email.com" />
+                <div class="input-wrapper">
+                    <span class="input-icon">✉️</span>
+                    <InputText @bind-Value="loginModel.Email" class="editorial-input w-100" placeholder="ejemplo@email.com" />
                 </div>
                 <ValidationMessage For="@(() => loginModel.Email)" class="small text-danger mt-1 px-1" />
             </div>
 
             <div class="mb-4">
                 <label class="editorial-label mb-2 px-1">Contraseña</label>
-                <div class="position-relative">
-                    <span class="position-absolute translate-middle-y" style="top: 50%; left: 1.2rem; font-size: 1.1rem; opacity: 0.6;">🔑</span>
-                    <InputText @bind-Value="loginModel.Password" type="password" class="editorial-input pl-5 py-3 w-100" style="padding-left: 3.2rem; border-radius: 1.25rem;" placeholder="••••••••" />
+                <div class="input-wrapper">
+                    <span class="input-icon">🔑</span>
+                    <InputText @bind-Value="loginModel.Password" type="@(showPassword ? "text" : "password")" class="editorial-input w-100" placeholder="••••••••" />
+                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword">
+                        @(showPassword ? "👁️" : "🙈")
+                    </button>
                 </div>
                 <ValidationMessage For="@(() => loginModel.Password)" class="small text-danger mt-1 px-1" />
             </div>
@@ -46,7 +49,7 @@
                 <a href="/forgot-password" class="text-primary text-decoration-none small fw-bold">¿Olvidaste tu contraseña?</a>
             </div>
 
-            <button type="submit" class="editorial-button-primary emerald-gradient w-100 py-3 shadow-lg" disabled="@loading" style="font-size: 1.05rem;">
+            <button type="submit" class="editorial-button-primary emerald-gradient w-100 py-3 shadow-lg btn-login" disabled="@loading">
                 @if (loading)
                 {
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -70,6 +73,7 @@
     private LoginRequest loginModel = new LoginRequest();
     private string? errorMessage;
     private bool loading = false;
+    private bool showPassword = false;
 
     private async Task HandleLogin()
     {

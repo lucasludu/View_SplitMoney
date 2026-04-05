@@ -8,18 +8,16 @@
 @inject IToastService ToastService
 @inject AuthenticationStateProvider AuthStateProvider
 
-<div class="container-fluid px-3 py-4 p-md-4" style="max-width: 600px; margin: 0 auto;">
+<div class="container-fluid px-3 py-4 p-md-4 settle-container">
     
     <!-- Header with Back Button -->
     <div class="d-flex align-items-center mb-5 gap-3">
-        <button class="btn rounded-circle shadow-sm" 
-                style="background-color: var(--surface-container-highest); color: var(--on-surface); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--outline-variant); transition: all 0.2s;" 
-                @onclick="GoBack">
-            <span style="font-size: 1.2rem; transform: translateX(-1px);">⬅️</span>
+        <button class="btn rounded-circle shadow-sm back-btn-box" @onclick="GoBack">
+            <span class="back-icon-mini">⬅️</span>
         </button>
         <div>
-            <p class="mb-0" style="color: var(--on-surface-variant); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600;">GestiÓn de Cuentas</p>
-            <h1 class="brand-font m-0 h2" style="letter-spacing: -0.02em;">Saldar Deudas</h1>
+            <p class="mb-0 header-sub-label">Gestión de Cuentas</p>
+            <h1 class="brand-font m-0 h2 page-main-title">Saldar Deudas</h1>
         </div>
     </div>
 
@@ -32,12 +30,12 @@
     }
     @if (myDebts == null || !myDebts.Any())
     {
-        <div class="editorial-card text-center py-5 px-4 shadow-lg" style="background: linear-gradient(145deg, var(--surface-container-low), var(--surface-container-high)); border: 1px dashed var(--outline-variant); margin-top: 2rem;">
-            <div class="mb-4 mx-auto" style="width: 80px; height: 80px; background: rgba(37, 99, 235, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">
+        <div class="editorial-card text-center py-5 px-4 shadow-lg up-to-date-box">
+            <div class="mb-4 mx-auto up-to-date-icon">
                 ✨
             </div>
             <h2 class="brand-font mb-3 h4">¡Estás al día!</h2>
-            <p class="mx-auto mb-0" style="color: var(--on-surface-variant); max-width: 400px; line-height: 1.6; font-size: 0.9rem;">
+            <p class="mx-auto mb-0 up-to-date-text">
                 No tienes deudas pendientes en ninguno de tus círculos. ¡Cuentas claras, amistades largas!
             </p>
         </div>
@@ -45,23 +43,23 @@
     else
     {
         <div class="mb-5">
-            <p class="section-label mb-4" style="color: var(--on-surface-variant); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;">TUS DEUDAS ACTIVAS</p>
+            <p class="section-label mb-4 section-header-label">TUS DEUDAS ACTIVAS</p>
             <div class="d-flex flex-column gap-3">
                 @foreach (var debt in myDebts)
                 {
-                    <div class="editorial-card p-3 d-flex justify-content-between align-items-center shadow-sm" style="border-left: 4px solid #ef4444; background: var(--surface-container-high);">
+                    <div class="editorial-card p-3 d-flex justify-content-between align-items-center shadow-sm debt-card-item">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="member-avatar" style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 700;">
+                            <div class="member-avatar creditor-avatar-box">
                                 @debt.CreditorName.Substring(0, 1).ToUpper()
                             </div>
                             <div>
-                                <p class="m-0 fw-bold" style="font-size: 0.95rem;">@debt.CreditorName</p>
-                                <p class="m-0 text-editorial-muted" style="font-size: 0.7rem;">Círculo: @debt.GroupName</p>
+                                <p class="m-0 fw-bold creditor-name-txt">@debt.CreditorName</p>
+                                <p class="m-0 text-editorial-muted group-name-micro">Círculo: @debt.GroupName</p>
                             </div>
                         </div>
                         <div class="text-end">
-                            <p class="m-0 fw-bold text-danger" style="font-size: 1.1rem;">@debt.Amount.ToString("C2")</p>
-                            <button class="btn btn-sm btn-outline-danger mt-1 rounded-pill px-3" style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.02em;" @onclick="() => SelectDebt(debt)">SALDAR</button>
+                            <p class="m-0 fw-bold text-danger debt-amount-txt">@debt.Amount.ToString("C2")</p>
+                            <button class="btn btn-sm btn-outline-danger mt-1 rounded-pill px-3 settle-btn-mini" @onclick="() => SelectDebt(debt)">SALDAR</button>
                         </div>
                     </div>
                 }
@@ -71,30 +69,28 @@
 
     @if (showForm)
     {
-        <div class="details-overlay d-flex align-items-center justify-content-center p-3" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 2000;" @onclick="() => showForm = false">
-            <div class="editorial-card shadow-2xl p-4 p-md-5 w-100" style="max-width: 500px; border: 1px solid var(--outline-variant); border-radius: 2rem;" @onclick:stopPropagation="true">
+        <div class="details-overlay d-flex align-items-center justify-content-center p-3 settle-modal-overlay" @onclick="() => showForm = false">
+            <div class="editorial-card shadow-2xl p-4 p-md-5 w-100 settlement-form-panel" @onclick:stopPropagation="true">
                 
                 <div class="text-center mb-5">
-                    <div class="mx-auto mb-4 scale-up-center" style="width: 72px; height: 72px; background: linear-gradient(135deg, var(--primary), #8E2DE2); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; transform: rotate(-5deg); box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);">
+                    <div class="mx-auto mb-4 scale-up-center payment-confirm-icon">
                         💸
                     </div>
-                    <p class="editorial-label mb-2" style="font-size: 0.8rem; font-weight: 600;">Confirmar pago a <span class="text-primary">@selectedCreditorName</span></p>
-                    <div class="d-flex align-items-center justify-content-center py-3 rounded-4" style="background: var(--surface-container-lowest); border: 1px solid var(--outline-variant);">
-                        <span class="brand-font" style="font-size: 1.8rem; color: var(--primary); margin-right: 0.5rem; opacity: 0.7;">$</span>
+                    <p class="editorial-label mb-2 confirm-payment-label">Confirmar pago a <span class="text-primary">@selectedCreditorName</span></p>
+                    <div class="d-flex align-items-center justify-content-center py-3 rounded-4 amount-input-box">
+                        <span class="brand-font amount-currency-symbol">$</span>
                         <input type="number" step="0.01"
-                               class="brand-font text-center" 
-                               style="background: transparent; border: none; color: white; font-size: 3rem; width: 70%; outline: none;" 
+                               class="brand-font text-center amount-big-input" 
                                @bind="settlement.Amount" />
                     </div>
                 </div>
 
                 <div class="mb-5">
-                    <label class="editorial-label mb-3" style="font-size: 0.75rem;">Medio de Pago</label>
+                    <label class="editorial-label mb-3 payment-method-label">Medio de Pago</label>
                     <div class="d-flex flex-column gap-2">
                         @foreach (var method in paymentMethods)
                         {
-                            <div class="editorial-selection-card p-3 rounded-4 d-flex align-items-center justify-content-between @(selectedMethod == method ? "selected" : "")" 
-                                 style="cursor: pointer; border-radius: 1rem !important;"
+                            <div class="editorial-selection-card p-3 rounded-4 d-flex align-items-center justify-content-between payment-selection-item @(selectedMethod == method ? "selected" : "")" 
                                  @onclick="() => selectedMethod = method">
                                 <span style="font-size: 0.95rem; font-weight: 500;">@method</span>
                                 @if(selectedMethod == method) {
@@ -106,7 +102,7 @@
                 </div>
 
                 <div class="d-flex gap-3 mt-4">
-                    <button class="btn rounded-pill flex-grow-1 py-3 fw-bold" style="background: var(--surface-container-highest); color: var(--on-surface); font-size: 0.9rem;" @onclick="() => showForm = false">Cancelar</button>
+                    <button class="btn rounded-pill flex-grow-1 py-3 fw-bold cancel-modal-btn" @onclick="() => showForm = false">Cancelar</button>
                     <button type="button" class="editorial-button-primary flex-grow-1" style="font-size: 0.9rem;" disabled="@submitting" @onclick="HandleSubmit">
                         @if (submitting)
                         {

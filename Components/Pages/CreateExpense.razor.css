@@ -1,0 +1,129 @@
+/* CSS Isolation for CreateExpense.razor */
+
+.create-expense-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.back-btn {
+    background-color: var(--surface-container-highest);
+    color: var(--on-surface);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--outline-variant);
+}
+
+.back-btn span {
+    font-size: 1.2rem;
+    transform: translateX(-1px);
+}
+
+.header-subtitle {
+    color: var(--on-surface-variant);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.total-amount-input {
+    font-size: 1.25rem;
+}
+
+.category-trigger {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.category-trigger .dropdown-arrow {
+    transition: transform 0.2s;
+    font-size: 0.8rem;
+    color: var(--on-surface-variant);
+}
+
+.category-dropdown-panel {
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    z-index: 100;
+    max-height: 280px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.category-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-container {
+    background: var(--surface-container-low);
+}
+
+.table-header-row {
+    font-size: 0.7rem;
+    color: var(--on-surface-variant);
+}
+
+.split-type-selector {
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+}
+
+.split-guide-text {
+    color: var(--on-surface-variant);
+    opacity: 1;
+    font-weight: 500;
+}
+
+.summary-card-sidebar {
+    background: var(--surface-container-low) !important;
+    border: 1px dashed var(--outline-variant) !important;
+}
+
+.summary-hero-display {
+    background: var(--surface-container-high);
+}
+
+.divider-line {
+    height: 1px;
+    background: var(--outline-variant);
+}
+
+.summary-section-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+}
+
+/* Original styles from <style> block */
+
+.category-option {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.category-option:hover {
+    background: var(--surface-container-highest);
+}
+
+.category-option.active {
+    background: rgba(var(--primary-rgb), 0.1);
+    border-right: 3px solid var(--primary);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--outline-variant);
+    border-radius: 10px;
+}

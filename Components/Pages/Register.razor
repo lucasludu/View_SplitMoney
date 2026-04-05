@@ -3,25 +3,29 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
-    <div class="editorial-card" style="width: 100%; max-width: 400px; padding: 2rem;">
-        <div class="text-center mb-8">
-            <h1 class="brand-font" style="font-size: 2.5rem; color: var(--primary);">Join Us</h1>
-            <p style="color: var(--on-surface-variant);">Start your financial journey.</p>
+<div class="register-page-wrapper d-flex align-items-center justify-content-center px-4">
+    <div class="editorial-card register-box shadow-lg">
+        <div class="text-center mb-5">
+            <h1 class="brand-font register-title">Crea tu Cuenta</h1>
+            <p class="register-subtitle">Únete a la mejor forma de dividir gastos.</p>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert alert-danger" style="background-color: var(--error-container); border: none; color: white; border-radius: 0.5rem; font-size: 0.875rem;">
-                <p>@errorMessage</p>
+            <div class="alert alert-danger mb-4 register-error-alert">
+                <p class="mb-1 fw-bold">Hubo un problema:</p>
                 @if (errors.Any())
                 {
-                    <ul style="margin-top: 5px; padding-left: 15px;">
+                    <ul class="error-list">
                         @foreach (var error in errors)
                         {
                             <li>@error</li>
                         }
                     </ul>
+                }
+                else
+                {
+                    <p class="m-0">@errorMessage</p>
                 }
             </div>
         }
@@ -29,55 +33,76 @@
         <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
             <DataAnnotationsValidator />
 
-            <div class="row">
+            <div class="row g-3 mb-4">
                 <div class="col-6">
                     <div class="editorial-input-group">
-                        <label class="editorial-label">First Name</label>
-                        <InputText @bind-Value="registerModel.FirstName" class="editorial-input" placeholder="Lucas" />
-                        <ValidationMessage For="@(() => registerModel.FirstName)" />
+                        <label class="editorial-label">Nombre</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">👤</span>
+                            <InputText @bind-Value="registerModel.FirstName" class="editorial-input w-100" placeholder="Lucas" />
+                        </div>
+                        <ValidationMessage For="@(() => registerModel.FirstName)" class="small text-danger mt-1" />
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="editorial-input-group">
-                        <label class="editorial-label">Last Name</label>
-                        <InputText @bind-Value="registerModel.LastName" class="editorial-input" placeholder="Ludu" />
-                        <ValidationMessage For="@(() => registerModel.LastName)" />
+                        <label class="editorial-label">Apellido</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🆔</span>
+                            <InputText @bind-Value="registerModel.LastName" class="editorial-input w-100" placeholder="Ludu" />
+                        </div>
+                        <ValidationMessage For="@(() => registerModel.LastName)" class="small text-danger mt-1" />
                     </div>
                 </div>
             </div>
 
-            <div class="editorial-input-group">
+            <div class="editorial-input-group mb-4">
                 <label class="editorial-label">Email</label>
-                <InputText @bind-Value="registerModel.Email" class="editorial-input" placeholder="name@example.com" />
-                <ValidationMessage For="@(() => registerModel.Email)" />
+                <div class="input-wrapper">
+                    <span class="input-icon">✉️</span>
+                    <InputText @bind-Value="registerModel.Email" class="editorial-input w-100" placeholder="nombre@ejemplo.com" />
+                </div>
+                <ValidationMessage For="@(() => registerModel.Email)" class="small text-danger mt-1" />
             </div>
 
-            <div class="editorial-input-group">
-                <label class="editorial-label">Password</label>
-                <InputText @bind-Value="registerModel.Password" type="password" class="editorial-input" placeholder="••••••••" />
-                <ValidationMessage For="@(() => registerModel.Password)" />
+            <div class="editorial-input-group mb-4">
+                <label class="editorial-label">Contraseña</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔑</span>
+                    <InputText @bind-Value="registerModel.Password" type="@(showPassword ? "text" : "password")" class="editorial-input w-100" placeholder="••••••••" />
+                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword">
+                        @(showPassword ? "👁️" : "🙈")
+                    </button>
+                </div>
+                <ValidationMessage For="@(() => registerModel.Password)" class="small text-danger mt-1" />
             </div>
 
-            <div class="editorial-input-group">
-                <label class="editorial-label">Confirm Password</label>
-                <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="editorial-input" placeholder="••••••••" />
-                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+            <div class="editorial-input-group mb-5">
+                <label class="editorial-label">Confirmar Contraseña</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">✅</span>
+                    <InputText @bind-Value="registerModel.ConfirmPassword" type="@(showPassword ? "text" : "password")" class="editorial-input w-100" placeholder="••••••••" />
+                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword">
+                        @(showPassword ? "👁️" : "🙈")
+                    </button>
+                </div>
+                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="small text-danger mt-1" />
             </div>
 
-            <button type="submit" class="editorial-button-primary mt-4 mb-4" disabled="@loading">
+            <button type="submit" class="editorial-button-primary w-100 py-3 shadow-lg" disabled="@loading">
                 @if (loading)
                 {
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 }
                 else
                 {
-                    <span>Create Account</span>
+                    <span>Registrarse Ahora ✨</span>
                 }
             </button>
 
-            <div class="text-center">
-                <p style="font-size: 0.875rem; color: var(--on-surface-variant);">
-                    Already have an account? <a href="/login" class="editorial-link">Login</a>
+            <div class="text-center mt-5">
+                <p class="footer-text">
+                    ¿Ya tienes cuenta? <a href="/login" class="text-primary text-decoration-none fw-bold ms-1">Inicia sesión</a>
                 </p>
             </div>
         </EditForm>
@@ -89,6 +114,7 @@
     private string? errorMessage;
     private List<string> errors = new List<string>();
     private bool loading = false;
+    private bool showPassword = false;
 
     private async Task HandleRegister()
     {

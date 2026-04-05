@@ -2,12 +2,12 @@
 @layout SplitMoney.Client.Components.Layout.MainLayout
 
 <div class="container d-flex align-items-center justify-content-center min-vh-80 px-4">
-    <div class="editorial-card text-center shadow-lg border-primary py-6 px-4" style="max-width: 500px; background: linear-gradient(145deg, var(--surface-container-low), var(--surface-container-high)); border: 1.5px dashed var(--primary); opacity: 0.9;">
-        <div class="mb-5 mx-auto" style="width: 120px; height: 120px; background: var(--surface-container-highest); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 4rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 2px solid var(--primary); animation: float 3s ease-in-out infinite;">
+    <div class="editorial-card text-center shadow-lg border-primary py-6 px-4 not-found-card">
+        <div class="mb-5 mx-auto not-found-icon-box">
             🔍
         </div>
-        <h1 class="brand-font mb-3" style="font-size: 2.2rem; color: var(--on-surface);">Página no encontrada</h1>
-        <p class="mx-auto mb-5" style="color: var(--on-surface-variant); line-height: 1.7; font-size: 1.1rem;">
+        <h1 class="brand-font mb-3 not-found-title">Página no encontrada</h1>
+        <p class="mx-auto mb-5 not-found-text">
             Lo sentimos, el rincón de SplitMoney que buscas no parece existir o fue movido a otro círculo.
         </p>
         <div class="d-grid gap-3">
@@ -18,12 +18,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    @@keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-    }
-    .min-vh-80 { min-height: 80vh; }
-    .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
-</style>

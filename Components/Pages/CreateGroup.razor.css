@@ -1,0 +1,56 @@
+/* CSS Isolation for CreateGroup.razor */
+
+.create-group-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.back-button-circle {
+    background-color: var(--surface-container-highest); 
+    color: var(--on-surface); 
+    width: 44px; 
+    height: 44px; 
+    border: 1px solid var(--outline-variant);
+}
+
+.back-icon {
+    font-size: 1.2rem;
+}
+
+.header-label {
+    color: var(--on-surface-variant); 
+    font-size: 0.75rem; 
+    text-transform: uppercase;
+}
+
+.group-name-input {
+    font-size: 1.5rem;
+}
+
+.add-member-btn {
+    width: 120px; 
+    border-radius: 12px; 
+    height: 50px;
+}
+
+.member-item-card {
+    background: var(--surface-container-low); 
+    border: 1px solid var(--outline-variant);
+}
+
+.member-avatar-circle {
+    width: 32px; 
+    height: 32px; 
+    background: var(--primary); 
+    color: white; 
+    font-weight: bold; 
+    font-size: 12px;
+}
+
+.member-email-text {
+    font-size: 0.9rem;
+}
+
+.me-badge {
+    font-size: 0.65rem;
+}

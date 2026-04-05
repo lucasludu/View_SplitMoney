@@ -6,29 +6,29 @@
             <div class="premium-icon-badge mb-3">
                 <span>👥</span>
             </div>
-            <h2 class="brand-font mb-2" style="font-size: 1.8rem; color: var(--on-surface);">@Title</h2>
+            <h2 class="brand-font mb-2 paywall-title">@Title</h2>
         </div>
 
         <div class="comparison-container d-flex gap-3 mb-4">
-            <div class="plan-card flex-grow-1 p-3 text-center border-0" style="background: rgba(255,255,255,0.05); border-radius: 1rem;">
-                <div class="mb-2" style="font-size: 1.5rem;">👥</div>
+            <div class="plan-card flex-grow-1 p-3 text-center border-0 free-plan-card">
+                <div class="mb-2 plan-icon-large">👥</div>
                 <p class="m-0 small text-editorial-muted">Gratis</p>
                 <p class="m-0 fw-bold">3 Círculos</p>
             </div>
-            <div class="plan-card flex-grow-1 p-3 text-center border-2" style="background: var(--surface-container-highest); border: 2px solid var(--primary); border-radius: 1rem; position: relative;">
+            <div class="plan-card flex-grow-1 p-3 text-center border-2 premium-plan-card">
                 <div class="premium-sparkle-badge">✨</div>
-                <div class="mb-2" style="font-size: 1.5rem;">🌟</div>
+                <div class="mb-2 plan-icon-large">🌟</div>
                 <p class="m-0 small text-editorial-muted">Premium</p>
                 <p class="m-0 fw-bold text-primary">Ilimitados</p>
             </div>
         </div>
 
         <div class="description-section px-2 mb-4 text-center">
-            <p class="small mb-4" style="line-height: 1.6; color: var(--on-surface-variant);">
+            <p class="small mb-4 description-text">
                 Has llegado al máximo de grupos para tu plan. Desbloquea todo el potencial, crea grupos sin límites y accede a análisis avanzados.
             </p>
             
-            <ul class="list-unstyled text-start mb-0 d-inline-block" style="font-size: 0.85rem;">
+            <ul class="list-unstyled text-start mb-0 d-inline-block feature-list">
                 <li class="mb-2 d-flex align-items-center gap-2">
                     <span class="text-success">✔</span> <span>Círculos ilimitados</span>
                 </li>
@@ -45,65 +45,11 @@
             Pasarme a Premium 🚀
         </button>
         
-        <button class="btn btn-link text-editorial-muted w-100 p-0 text-decoration-none" style="font-size: 0.85rem;" @onclick="OnClose">
+        <button class="btn btn-link text-editorial-muted w-100 p-0 text-decoration-none dismiss-btn" @onclick="OnClose">
             Quizás en otro momento
         </button>
     </div>
 </div>
-
-<style>
-    .paywall-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1.5rem;
-    }
-
-    .paywall-card {
-        width: 100%;
-        max-width: 400px;
-        border-radius: 2.5rem;
-        padding: 2.5rem 2rem;
-        background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.1), transparent 70%), 
-                    var(--surface-container-low);
-        border: 1px solid var(--outline-variant);
-    }
-
-    .premium-icon-badge {
-        width: 64px;
-        height: 64px;
-        background: var(--surface-container-highest);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        margin: 0 auto;
-        border: 2px solid var(--outline-variant);
-    }
-
-    .premium-sparkle-badge {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background: var(--primary);
-        color: white;
-        font-size: 0.7rem;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.4);
-    }
-</style>
 
 @code {
     [Parameter] public string Title { get; set; } = "Límite Alcanzado";

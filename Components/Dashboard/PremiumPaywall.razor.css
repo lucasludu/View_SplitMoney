@@ -1,0 +1,87 @@
+/* CSS Isolation for PremiumPaywall.razor */
+
+.paywall-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.paywall-card {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 2.5rem;
+    padding: 2.5rem 2rem;
+    background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.1), transparent 70%), 
+                var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+}
+
+.premium-icon-badge {
+    width: 64px;
+    height: 64px;
+    background: var(--surface-container-highest);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto;
+    border: 2px solid var(--outline-variant);
+}
+
+.premium-sparkle-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.4);
+}
+
+.paywall-title {
+    font-size: 1.8rem; 
+    color: var(--on-surface);
+}
+
+.free-plan-card {
+    background: rgba(255,255,255,0.05); 
+    border-radius: 1rem;
+}
+
+.premium-plan-card {
+    background: var(--surface-container-highest); 
+    border: 2px solid var(--primary); 
+    border-radius: 1rem; 
+    position: relative;
+}
+
+.plan-icon-large {
+    font-size: 1.5rem;
+}
+
+.description-text {
+    line-height: 1.6; 
+    color: var(--on-surface-variant);
+}
+
+.feature-list {
+    font-size: 0.85rem;
+}
+
+.dismiss-btn {
+    font-size: 0.85rem;
+}
