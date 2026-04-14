@@ -6,6 +6,8 @@
 @inject NavigationManager Navigation
 @inject IExpenseService ExpenseService
 @inject IToastService ToastService
+@inject IModalService ModalService
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject AuthenticationStateProvider AuthStateProvider
 
 <div class="container-fluid px-3 py-4 p-md-5 create-group-container">
@@ -96,10 +98,17 @@
     private string userEmail = string.Empty;
     private List<MemberSpendRecordViewModel> members = new();
     private bool submitting = false;
+    private bool isPremium = false;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        
+        // Cargar estado premium real o simulado
+        var isRealPremium = authState.User.IsInRole("PremiumUser");
+        var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
+        isPremium = isRealPremium || isSimulatedPremium;
+
         userEmail = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "";
         
         if (!string.IsNullOrEmpty(userEmail))
@@ -110,11 +119,24 @@
 
     private void AddMember()
     {
-        if (!string.IsNullOrWhiteSpace(newMemberEmail) && newMemberEmail.Contains("@") && !members.Any(m => m.Email == newMemberEmail))
+        if (string.IsNullOrWhiteSpace(newMemberEmail) || !newMemberEmail.Contains("@") || members.Any(m => m.Email == newMemberEmail))
         {
-            members.Add(new MemberSpendRecordViewModel { Email = newMemberEmail, AmountSpent = 0 });
-            newMemberEmail = string.Empty;
+            return;
         }
+
+        // Limit check for non-premium users
+        if (!isPremium && members.Count >= 5)
+        {
+            ModalService.ShowModal(
+                "Límite de Invitados", 
+                "Has alcanzado el límite de 5 personas por grupo para usuarios estándar. Desbloquea el plan Premium para crear círculos ilimitados y sin límites de invitados.", 
+                ModalType.Warning
+            );
+            return;
+        }
+
+        members.Add(new MemberSpendRecordViewModel { Email = newMemberEmail, AmountSpent = 0 });
+        newMemberEmail = string.Empty;
     }
 
     private void GoBack() => Navigation.NavigateTo("/groups");
@@ -130,12 +152,12 @@
 
         if (success)
         {
-            ToastService.ShowToast("¡Grupo creado con éxito! 🌐", ToastLevel.Success);
+            ModalService.ShowModal("¡Círculo Creado!", $"El grupo '{groupName}' ha sido registrado con éxito. ¡Ya puedes empezar a cargar gastos!", ModalType.Success);
             Navigation.NavigateTo("/groups");
         }
         else
         {
-            ToastService.ShowToast("Error al crear el grupo", ToastLevel.Error);
+            ModalService.ShowModal("Error al Crear", "No pudimos guardar el grupo en este momento. Por favor, verifica tu conexión e intenta de nuevo.", ModalType.Error);
         }
     }
 }

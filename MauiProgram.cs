@@ -20,6 +20,7 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+        builder.Services.AddBlazoredLocalStorage();
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
@@ -32,6 +33,8 @@ public static class MauiProgram
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IExpenseService, ExpenseService>();
         builder.Services.AddScoped<IToastService, ToastService>();
+        builder.Services.AddScoped<IModalService, ModalService>();
+        builder.Services.AddScoped<ITipService, TipService>();
 
         // HTTP Handlers registration
         builder.Services.AddTransient<AuthenticationHeaderHandler>();

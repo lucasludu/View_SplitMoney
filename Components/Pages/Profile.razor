@@ -1,0 +1,223 @@
+@page "/profile"
+@using SplitMoney.Client.Services
+@using SplitMoney.Client.Models
+@using System.Security.Claims
+@attribute [Authorize]
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject IModalService ModalService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="container-fluid px-3 py-4 p-md-5 profile-container">
+    
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-5 gap-3">
+        <button class="btn rounded-circle back-btn" @onclick="GoBack">
+            <span>⬅️</span>
+        </button>
+        <div>
+            <p class="mb-1 header-subtitle">Mi Cuenta</p>
+            <h1 class="brand-font m-0 h2-responsive">Configuración de Perfil</h1>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4 justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="editorial-card shadow-lg p-4 p-md-5">
+                    
+                    <!-- Avatar and Basic Info -->
+                    <div class="text-center mb-5">
+                        <div class="avatar-large mx-auto mb-3 shadow-sm">
+                            @(userProfile.FirstName.Substring(0, 1).ToUpper())
+                        </div>
+                        <h3 class="brand-font mb-1">@userProfile.FirstName @userProfile.LastName</h3>
+                        <span class="badge rounded-pill @(userProfile.Role == "PremiumUser" ? "bg-premium" : "bg-standard") px-3 py-2">
+                            @(userProfile.Role == "PremiumUser" ? "🌟 Miembro Premium" : "👤 Usuario Estándar")
+                        </span>
+                    </div>
+
+                    <form @onsubmit="HandleUpdate">
+                        <div class="row g-4">
+                            <!-- First Name -->
+                            <div class="col-12 col-md-6">
+                                <label class="editorial-label">Nombre</label>
+                                <input type="text" class="editorial-input" @bind="userProfile.FirstName" required />
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="col-12 col-md-6">
+                                <label class="editorial-label">Apellido</label>
+                                <input type="text" class="editorial-input" @bind="userProfile.LastName" required />
+                            </div>
+
+                            <!-- Email (Read Only usually, but let's allow if the API does) -->
+                            <div class="col-12">
+                                <label class="editorial-label">Correo Electrónico</label>
+                                <input type="email" class="editorial-input opacity-75" @bind="userProfile.Email" readonly />
+                                <p class="small text-editorial-muted mt-1">El email no puede ser modificado por seguridad.</p>
+                            </div>
+
+                            <!-- Role Info -->
+                            <div class="col-12">
+                                <div class="p-4 rounded-4 bg-surface-variant d-flex align-items-center gap-3 info-box">
+                                    <span style="font-size: 1.5rem;">ℹ️</span>
+                                    <div>
+                                        <p class="m-0 fw-bold small">Estado de la cuenta</p>
+                                        <p class="m-0 x-small text-editorial-muted">Eres parte del nivel @(userProfile.Role == "PremiumUser" ? "Architect Staff" : "Standard User").</p>
+                                    </div>
+                                    @if (userProfile.Role != "PremiumUser")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-auto rounded-pill px-3" @onclick='() => Navigation.NavigateTo("/premium")'>Mejorar ✨</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-column flex-md-row gap-3 mt-5">
+                            <button type="submit" class="editorial-button-primary flex-grow-1 py-3" disabled="@submitting">
+                                @if (submitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                }
+                                else
+                                {
+                                    <span>Guardar Cambios 💾</span>
+                                }
+                            </button>
+                            <button type="button" class="btn rounded-pill border py-3 px-4" @onclick="GoBack">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .avatar-large {
+        width: 100px;
+        height: 100px;
+        background: var(--primary);
+        color: white;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+    }
+
+    .bg-premium {
+        background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+        color: #000;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .bg-standard {
+        background: var(--surface-container-highest);
+        color: var(--on-surface-variant);
+        font-weight: 600;
+        border: 1px solid var(--outline-variant);
+    }
+
+    .bg-surface-variant {
+        background: var(--surface-container-high);
+        border: 1px solid var(--outline-variant);
+    }
+
+    .back-btn {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface-container-highest);
+        border: 1px solid var(--outline-variant);
+        transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+        transform: translateX(-3px);
+        background: var(--surface-dim);
+    }
+
+    .info-box {
+        border: 1px dashed var(--primary);
+    }
+</style>
+
+@code {
+    private UserDto userProfile = new();
+    private bool isLoading = true;
+    private bool submitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await AuthService.GetProfile();
+            if (response != null && response.Succeeded && response.Data != null)
+            {
+                userProfile = response.Data;
+            }
+            else
+            {
+                ModalService.ShowModal("Error", "No pudimos cargar los datos de tu perfil en este momento.", ModalType.Error);
+                Navigation.NavigateTo("/");
+            }
+        }
+        catch (Exception)
+        {
+            // If API fails, mock it with token info as fallback or just fail
+            ModalService.ShowModal("Error de Sincronización", "Hay un problema conectando con el servidor de perfiles.", ModalType.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleUpdate()
+    {
+        submitting = true;
+        try
+        {
+            var response = await AuthService.UpdateProfile(userProfile);
+            if (response != null && response.Succeeded)
+            {
+                ModalService.ShowModal("¡Perfil Actualizado!", "Tus cambios han sido guardados correctamente.", ModalType.Success);
+            }
+            else
+            {
+                ModalService.ShowModal("No se pudo guardar", response?.Message ?? "Ocurrió un error al intentar actualizar.", ModalType.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ModalService.ShowModal("Error Crítico", $"Ocurrió un fallo en el sistema: {ex.Message}", ModalType.Error);
+        }
+        finally
+        {
+            submitting = false;
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/");
+}

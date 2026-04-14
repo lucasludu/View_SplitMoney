@@ -25,12 +25,12 @@ namespace SplitMoney.Client.Infrastructure
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", savedToken);
 
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(savedToken), "jwt")));
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(savedToken), "jwt", System.Security.Claims.ClaimTypes.Name, System.Security.Claims.ClaimTypes.Role)));
         }
 
         public void MarkUserAsAuthenticated(string token)
         {
-            var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt"));
+            var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt", System.Security.Claims.ClaimTypes.Name, System.Security.Claims.ClaimTypes.Role));
             var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
             NotifyAuthenticationStateChanged(authState);
         }
@@ -49,28 +49,29 @@ namespace SplitMoney.Client.Infrastructure
             var jsonBytes = ParseBase64WithoutPadding(payload);
             var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
 
-            keyValuePairs!.TryGetValue(ClaimTypes.Role, out object roles);
-
-            if (roles != null)
+            // Handle roles (both standard URI and short names)
+            var roleKeys = new[] { ClaimTypes.Role, "role", "roles" };
+            foreach (var key in roleKeys)
             {
-                if (roles.ToString()!.Trim().StartsWith("["))
+                if (keyValuePairs!.TryGetValue(key, out object? roles) && roles != null)
                 {
-                    var parsedRoles = JsonSerializer.Deserialize<string[]>(roles.ToString()!);
-
-                    foreach (var parsedRole in parsedRoles!)
+                    if (roles.ToString()!.Trim().StartsWith("["))
                     {
-                        claims.Add(new Claim(ClaimTypes.Role, parsedRole));
+                        var parsedRoles = JsonSerializer.Deserialize<string[]>(roles.ToString()!);
+                        foreach (var parsedRole in parsedRoles!)
+                        {
+                            claims.Add(new Claim(ClaimTypes.Role, parsedRole));
+                        }
                     }
+                    else
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, roles.ToString()!));
+                    }
+                    keyValuePairs.Remove(key);
                 }
-                else
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, roles.ToString()!));
-                }
-
-                keyValuePairs.Remove(ClaimTypes.Role);
             }
 
-            claims.AddRange(keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()!)));
+            claims.AddRange(keyValuePairs!.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()!)));
 
             return claims;
         }

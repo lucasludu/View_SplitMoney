@@ -1,0 +1,125 @@
+@using SplitMoney.Client.Services
+@inject IModalService ModalService
+@implements IDisposable
+
+@if (isVisible)
+{
+    <!-- Using generic-modal-overlay instead of generic modal, or reuse similar class -->
+    <div class="generic-modal-overlay" @onclick="CloseModal">
+        <div class="generic-modal-card shadow-lg p-4" @onclick:stopPropagation="true">
+            <div class="text-center mb-3">
+                <span class="modal-emoji-icon">@GetIcon()</span>
+            </div>
+            
+            <h2 class="brand-font text-center h4 mb-2" style="color: @GetTitleColor();">@ModalService.Title</h2>
+            
+            <div class="modal-message-box p-3 mb-4 rounded-3 text-center">
+                <p class="m-0" style="color: var(--on-surface-variant);">@ModalService.Message</p>
+            </div>
+
+            <button class="@GetButtonClass() w-100 py-2 rounded-pill" @onclick="CloseModal" style="font-weight: 600;">
+                Aceptar
+            </button>
+        </div>
+    </div>
+}
+
+<style>
+    .generic-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 1rem;
+    }
+
+    .generic-modal-card {
+        background: var(--surface-container);
+        border: 1px solid var(--outline-variant);
+        border-radius: 1.5rem;
+        width: 100%;
+        max-width: 400px;
+        animation: modalBounce 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .modal-emoji-icon {
+        font-size: 3.5rem;
+        line-height: 1;
+        display: inline-block;
+    }
+    
+    .modal-message-box {
+        background: var(--surface-container-highest);
+        font-size: 0.95rem;
+    }
+
+    @@keyframes modalBounce {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+@code {
+    private bool isVisible = false;
+
+    protected override void OnInitialized()
+    {
+        ModalService.OnShow += ShowModal;
+        ModalService.OnHide += HideModal;
+    }
+
+    private void ShowModal()
+    {
+        isVisible = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HideModal()
+    {
+        isVisible = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseModal()
+    {
+        ModalService.HideModal();
+    }
+
+    private string GetIcon() => ModalService.Type switch
+    {
+        ModalType.Success => "✅",
+        ModalType.Error => "❌",
+        ModalType.Warning => "⚠️",
+        _ => "ℹ️"
+    };
+
+    private string GetTitleColor() => ModalService.Type switch
+    {
+        ModalType.Success => "var(--success, #10b981)",
+        ModalType.Error => "var(--error, #ef4444)",
+        ModalType.Warning => "var(--warning, #f59e0b)",
+        _ => "var(--primary, #3b82f6)"
+    };
+
+    private string GetButtonClass() => ModalService.Type switch
+    {
+        ModalType.Success => "btn btn-success",
+        ModalType.Error => "btn btn-danger",
+        ModalType.Warning => "btn btn-warning",
+        _ => "editorial-button-primary"
+    };
+
+    public void Dispose()
+    {
+        ModalService.OnShow -= ShowModal;
+        ModalService.OnHide -= HideModal;
+    }
+}

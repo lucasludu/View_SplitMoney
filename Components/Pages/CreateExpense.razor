@@ -7,7 +7,9 @@
 @inject NavigationManager Navigation
 @inject IExpenseService ExpenseService
 @inject IToastService ToastService
+@inject IModalService ModalService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @using SplitMoney.Client.Components.Dashboard
 
 <div class="container-fluid px-3 py-4 p-md-4 create-expense-container" @onclick="CloseDropdowns">
@@ -219,7 +221,7 @@
                         }
                         else
                         {
-                            <span>Cargar Gasto al Círculo 🚀</span>
+                            <span>@(ExpenseId.HasValue ? "Guardar Cambios" : "Cargar Gasto al Círculo") 🚀</span>
                         }
                     </button>
                 </div>
@@ -289,7 +291,7 @@
     }
     @if (showPaywall)
     {
-        <PremiumPaywall Title="@paywallTitle" OnClose="() => showPaywall = false" OnUpgrade="HandleUpgrade" />
+        <PremiumPaywall Title="@paywallTitle" OnClose="() => showPaywall = false" OnUpgrade="HandleUpgrade" OnSimulate="HandleSimulatePremium" />
     }
 </div>
 
@@ -321,7 +323,15 @@
 
     private void HandleUpgrade()
     {
-        ToastService.ShowToast("Próximamente: Integración con suscripciones 💳", ToastLevel.Info);
+        Navigation.NavigateTo("/premium");
+    }
+
+    private async Task HandleSimulatePremium() 
+    {
+        isPremium = true;
+        await LocalStorage.SetItemAsync("is_simulated_premium", true);
+        ModalService.ShowModal("Simulación Activa", "Modo premium activado para propósitos de prueba.", ModalType.Success);
+        StateHasChanged();
     }
 
     private bool isCategoryDropdownOpen = false;
@@ -393,10 +403,21 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        isPremium = authState.User.IsInRole("PremiumUser");
+        
+        // Cargar estado premium real o simulado
+        var isRealPremium = authState.User.IsInRole("PremiumUser");
+        var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
+        isPremium = isRealPremium || isSimulatedPremium;
 
         userGroups = await ExpenseService.GetUserGroupsAsync();
         categories = await ExpenseService.GetCategoriesAsync();
+
+        if (!userGroups.Any())
+        {
+            ModalService.ShowModal("Sin Grupos", "No puedes registrar gastos si no perteneces a ningún círculo. Crea un grupo primero.", ModalType.Warning);
+            Navigation.NavigateTo("/groups");
+            return;
+        }
         
         if (ExpenseId.HasValue)
         {
@@ -553,14 +574,14 @@
 
         if (success)
         {
-            ToastService.ShowToast(ExpenseId.HasValue ? "¡Gasto actualizado! ✏️" : "¡Gasto multi-pagador registrado! 🚀", ToastLevel.Success);
+            ModalService.ShowModal("¡Gasto Procesado!", ExpenseId.HasValue ? "El gasto fue actualizado correctamente." : "El nuevo gasto fue registrado en el círculo con éxito.", ModalType.Success);
             await Task.Delay(500); 
             Navigation.NavigateTo("/");
         }
         else
         {
             expense.Payments = originalPayments; // Restore for UI if failed
-            ToastService.ShowToast("Error al procesar el gasto", ToastLevel.Error);
+            ModalService.ShowModal("Error Inesperado", "Ocurrió un problema al procesar el gasto y no se pudo guardar. Intenta de nuevo.", ModalType.Error);
         }
     }
 }

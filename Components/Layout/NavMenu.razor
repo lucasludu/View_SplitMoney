@@ -1,6 +1,9 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IExpenseService ExpenseService
+@inject IModalService ModalService
 
 <!-- Top Bar for Mobile -->
 <div class="top-row d-flex align-items-center justify-content-between d-md-none px-3 shadow-sm mobile-header">
@@ -33,14 +36,21 @@
         
         <div class="nav-group mb-4">
             <p class="nav-label">Operaciones</p>
-            <NavLink class="editorial-nav-link" href="/expenses/new" @onclick="CloseMenu">
+            <a class="editorial-nav-link cursor-pointer" @onclick="HandleCreateExpenseNav">
                 <span class="nav-icon">➕</span> <span class="nav-text">Cargar Gasto</span>
-            </NavLink>
+            </a>
             <NavLink class="editorial-nav-link" href="/groups" @onclick="CloseMenu">
                 <span class="nav-icon">👥</span> <span class="nav-text">Mis Grupos</span>
             </NavLink>
             <NavLink class="editorial-nav-link" href="/settle" @onclick="CloseMenu">
                 <span class="nav-icon">💸</span> <span class="nav-text">Saldar Cuentas</span>
+            </NavLink>
+        </div>
+
+        <div class="nav-group mb-4">
+            <p class="nav-label">Cuenta</p>
+            <NavLink class="editorial-nav-link" href="/profile" @onclick="CloseMenu">
+                <span class="nav-icon">⚙️</span> <span class="nav-text">Configuración</span>
             </NavLink>
         </div>
 
@@ -54,7 +64,13 @@
                             </div>
                             <div class="user-info flex-grow-1 overflow-hidden">
                                 <p class="m-0 fw-bold text-truncate">@userName</p>
-                                <p class="m-0 small-text">Architect Staff</p>
+                                <div class="d-flex align-items-center gap-1">
+                                    <p class="m-0 small-text">@(isPremium ? (isSimulatedPremium ? "Simulated Pro" : "Architect Staff") : "Standard User")</p>
+                                    @if (isSimulatedPremium)
+                                    {
+                                        <button class="btn btn-link p-0 text-warning" @onclick="DisableSimulation" title="Desactivar Simulación" style="font-size: 0.8rem; line-height: 1;">✕</button>
+                                    }
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -207,11 +223,20 @@
 @code {
     private bool collapseNavMenu = true;
     private string userName = "User";
+    private bool isPremium = false;
+    private bool isSimulatedPremium = false;
+    private bool isRealPremium = false;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+        
+        // Check real and simulated premium status
+        isRealPremium = user.IsInRole("PremiumUser");
+        isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
+        isPremium = isRealPremium || isSimulatedPremium;
+
         if (user.Identity?.IsAuthenticated == true)
         {
             var name = user.Claims.FirstOrDefault(c => c.Type == "FirstName" || c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
@@ -232,9 +257,34 @@
         StateHasChanged();
     }
 
+    private async Task DisableSimulation()
+    {
+        await LocalStorage.RemoveItemAsync("is_simulated_premium");
+        isSimulatedPremium = false;
+        isPremium = isRealPremium;
+        StateHasChanged();
+        // Force reload to update other components
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
     private async Task HandleLogout()
     {
         await AuthService.Logout();
         Navigation.NavigateTo("/login");
+    }
+
+    private async Task HandleCreateExpenseNav()
+    {
+        CloseMenu();
+        var groups = await ExpenseService.GetUserGroupsAsync();
+        if (groups == null || !groups.Any())
+        {
+            ModalService.ShowModal("No hay Grupos", "Debes pertenecer a un círculo antes de cargar gastos. Crea tu primer grupo ahora.", ModalType.Warning);
+            Navigation.NavigateTo("/groups");
+        }
+        else
+        {
+            Navigation.NavigateTo("/expenses/new");
+        }
     }
 }

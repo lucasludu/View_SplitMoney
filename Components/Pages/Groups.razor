@@ -5,8 +5,10 @@
 @inject IExpenseService ExpenseService
 @inject NavigationManager Navigation
 @inject IToastService ToastService
+@inject IModalService ModalService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JSRuntime
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @using SplitMoney.Client.Components.Dashboard
 
 <div class="container-fluid px-3 py-4 p-md-4 groups-container">
@@ -69,7 +71,7 @@
 
 @if (showPaywall)
 {
-    <PremiumPaywall Title="@paywallTitle" OnClose="() => showPaywall = false" OnUpgrade="HandleUpgrade" />
+    <PremiumPaywall Title="@paywallTitle" OnClose="() => showPaywall = false" OnUpgrade="HandleUpgrade" OnSimulate="HandleSimulatePremium" />
 }
 
 <!-- Group Details Modal/Overlay -->
@@ -273,7 +275,11 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        isPremium = authState.User.IsInRole("PremiumUser");
+        
+        // Cargar estado premium real o simulado
+        var isRealPremium = authState.User.IsInRole("PremiumUser");
+        var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
+        isPremium = isRealPremium || isSimulatedPremium;
 
         groups = await ExpenseService.GetUserGroupsAsync();
         isLoading = false;
@@ -307,6 +313,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading group details: {ex.Message}");
+            ModalService.ShowModal("Error de Sincronización", "No se pudieron obtener los detalles de este círculo en este momento.", ModalType.Error);
         }
         finally
         {
@@ -328,11 +335,11 @@
             {
                 var fileName = $"Reporte_{selectedGroup.Name}_{DateTime.Now:yyyyMMdd}.csv";
                 await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(data));
-                ToastService.ShowToast("Reporte descargado con éxito 📄", ToastLevel.Success);
+                ModalService.ShowModal("Exportación Exitosa", $"El reporte '{fileName}' fue generado y descargado correctamente.", ModalType.Success);
             }
             else
             {
-                ToastService.ShowToast("Error al generar el reporte", ToastLevel.Error);
+                ModalService.ShowModal("Error de Exportación", "No pudimos generar el reporte excel para este círculo.", ModalType.Error);
             }
         }
         finally
@@ -349,7 +356,24 @@
 
     private void HandleUpgrade()
     {
-        ToastService.ShowToast("Próximamente: Integración con pasarela de pago 💳", ToastLevel.Info);
+        Navigation.NavigateTo("/premium");
+    }
+
+    private async Task HandleSimulatePremium() 
+    {
+        isPremium = true;
+        await LocalStorage.SetItemAsync("is_simulated_premium", true);
+        ModalService.ShowModal("Simulación Activa", "Modo premium habilitado en este entorno de desarrollo.", ModalType.Warning);
+        
+        // Si hay un grupo seleccionado, recargar sus detalles para traer el summary premium
+        if (selectedGroup != null)
+        {
+            await ShowGroupDetails(selectedGroup);
+        }
+        else
+        {
+            StateHasChanged();
+        }
     }
 
     private void CloseDetails()

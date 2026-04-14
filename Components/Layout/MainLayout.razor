@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @using SplitMoney.Client.Components.UI
+@inject NavigationManager Navigation
 
 <div class="app-container">
     <div class="sidebar">
@@ -8,9 +9,38 @@
 
     <main class="main-content">
         <article class="content p-0 m-0">
-            @Body
+            <ErrorBoundary @ref="errorBoundary">
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent Context="ex">
+                    <div class="error-modal-overlay">
+                        <div class="error-modal-card shadow-lg p-4">
+                            <div class="text-center mb-3">
+                                <span style="font-size: 3rem; line-height: 1;">⚠️</span>
+                            </div>
+                            <h2 class="brand-font text-center h4 mb-2" style="color: var(--on-surface);">¡Oops! Algo salió mal</h2>
+                            <p class="text-center text-editorial-muted small mb-4">Ha ocurrido un error inesperado. Aquí tienes el detalle:</p>
+                            
+                            <div class="error-details-box p-3 mb-4 rounded-3 custom-scrollbar">
+                                <code style="color: var(--error);">@ex.Message</code>
+                            </div>
+
+                            <div class="d-flex flex-column flex-sm-row gap-2">
+                                <button class="btn btn-outline-secondary rounded-pill flex-grow-1" @onclick="ReloadPage">
+                                    🔄 Recargar
+                                </button>
+                                <button class="editorial-button-primary flex-grow-1" @onclick="Recover">
+                                    Ignorar ➡️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </ErrorContent>
+            </ErrorBoundary>
         </article>
         <ToastNotification />
+        <GlobalModal />
     </main>
 </div>
 
@@ -35,6 +65,45 @@
         width: 100%;
     }
 
+    .error-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 1rem;
+    }
+
+    .error-modal-card {
+        background: var(--surface-container);
+        border: 1px solid var(--outline-variant);
+        border-radius: 1.5rem;
+        width: 100%;
+        max-width: 450px;
+        animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .error-details-box {
+        background: var(--surface-container-highest);
+        border: 1px solid var(--outline-variant);
+        max-height: 120px;
+        overflow-y: auto;
+        font-size: 0.85rem;
+        word-break: break-all;
+    }
+
+    @@keyframes scaleIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
     @@media (max-width: 767.98px) {
         .app-container {
             flex-direction: column;
@@ -45,3 +114,23 @@
         }
     }
 </style>
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    protected override void OnParametersSet()
+    {
+        // On navigation, recover from previous errors
+        errorBoundary?.Recover();
+    }
+
+    private void Recover()
+    {
+        errorBoundary?.Recover();
+    }
+
+    private void ReloadPage()
+    {
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+}

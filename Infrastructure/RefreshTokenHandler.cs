@@ -35,7 +35,19 @@ namespace SplitMoney.Client.Infrastructure
                     var navigationManager = _serviceProvider.GetRequiredService<NavigationManager>();
 
                     toastService.ShowToast("Tu sesión ha expirado por inactividad.", ToastLevel.Warning);
-                    navigationManager.NavigateTo("session-expired");
+                    _ = MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        // Esperamos un segundo para asegurar que el WebView se terminó de despertar
+                        await Task.Delay(100);
+                        try
+                        {
+                            navigationManager.NavigateTo("session-expired");
+                        }
+                        catch
+                        {
+                            // Si falla, el usuario caerá en la página principal y el AuthState lo sacará
+                        }
+                    });
                 }
             }
 

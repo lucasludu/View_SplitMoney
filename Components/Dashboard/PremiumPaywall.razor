@@ -45,9 +45,19 @@
             Pasarme a Premium 🚀
         </button>
         
-        <button class="btn btn-link text-editorial-muted w-100 p-0 text-decoration-none dismiss-btn" @onclick="OnClose">
+        <button class="btn btn-link text-editorial-muted w-100 p-0 text-decoration-none dismiss-btn mb-1" @onclick="OnClose">
             Quizás en otro momento
         </button>
+
+        @if (OnSimulate.HasDelegate)
+        {
+            <div class="mt-4 pt-3 border-top border-secondary opacity-50 simulation-zone">
+                <button class="btn btn-sm btn-outline-warning w-100 rounded-pill simulation-btn" @onclick="HandleSimulate" style="font-size: 0.75rem; font-weight: 500;">
+                    🧪 [SIMULAR PAGO EXITOSO]
+                </button>
+                <p class="text-center x-small text-editorial-muted m-0 p-1" style="font-size: 0.6rem;">Solo modo desarrollo</p>
+            </div>
+        }
     </div>
 </div>
 
@@ -55,10 +65,17 @@
     [Parameter] public string Title { get; set; } = "Límite Alcanzado";
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnUpgrade { get; set; }
+    [Parameter] public EventCallback OnSimulate { get; set; }
 
     private async Task HandleUpgrade()
     {
         await OnUpgrade.InvokeAsync();
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task HandleSimulate()
+    {
+        await OnSimulate.InvokeAsync();
         await OnClose.InvokeAsync();
     }
 }

@@ -8,5 +8,7 @@ namespace SplitMoney.Client.Services
         Task<Response<string>> Register(RegisterUserRequest registerRequest);
         Task Logout();
         Task<string> RefreshToken();
+        Task<Response<UserDto>> GetProfile();
+        Task<Response<string>> UpdateProfile(UserDto userUpdate);
     }
 }

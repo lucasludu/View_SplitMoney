@@ -148,7 +148,8 @@ public class ExpenseService : IExpenseService
 
     public async Task<bool> SettleDebtAsync(SettleDebtModel settlement)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/v1/groups/settle", settlement);
+        var wrap = new { request = settlement };
+        var response = await _httpClient.PostAsJsonAsync("api/v1/groups/settle", wrap);
         return response.IsSuccessStatusCode;
     }
 
@@ -161,7 +162,8 @@ public class ExpenseService : IExpenseService
             TotalAmount = expense.TotalAmount,
             GroupId = expense.GroupId,
             CategoryId = expense.CategoryId,
-            Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList()
+            Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
+            Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
         };
 
         var response = await _httpClient.PutAsJsonAsync($"api/v1/expenses/{id}", request);

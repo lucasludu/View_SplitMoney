@@ -1,0 +1,109 @@
+@page "/premium"
+@layout Components.Layout.MainLayout
+@inject NavigationManager Navigation
+@inject IToastService ToastService
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<div class="premium-page-container px-4 py-5 pb-6">
+    <!-- Back Button -->
+    <button class="back-link mb-5 d-inline-flex align-items-center gap-2 border-0 bg-transparent text-editorial-muted" @onclick='() => Navigation.NavigateTo("/")'>
+        <span style="font-size: 1.2rem;">←</span>
+        <span>Volver al Dashboard</span>
+    </button>
+
+    <!-- Header Section -->
+    <div class="text-center mb-6">
+        <div class="hero-icon-container mb-4">
+            <span class="premium-hero-icon sparkle-anim">👑</span>
+        </div>
+        <h1 class="brand-font display-4 mb-3 premium-title">Evoluciona a <span class="premium-gradient-text">Premium</span></h1>
+        <p class="mx-auto lead premium-subtitle" style="max-width: 500px;">
+            Desbloquea el poder total de SplitMoney y toma el control absoluto de tus finanzas grupales.
+        </p>
+    </div>
+
+    <!-- Feature Grid -->
+    <div class="row g-4 mb-6 features-grid">
+        <div class="col-12 col-md-4">
+            <div class="feature-card glass-panel h-100 p-4">
+                <div class="feature-icon-box mb-3">♾️</div>
+                <h3 class="h5 brand-font mb-2">Grupos Ilimitados</h3>
+                <p class="small text-editorial-muted m-0">Crea tantos círculos de gastos como necesites sin restricciones de cantidad.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="feature-card glass-panel h-100 p-4">
+                <div class="feature-icon-box mb-3">📊</div>
+                <h3 class="h5 brand-font mb-2">Análisis Profesional</h3>
+                <p class="small text-editorial-muted m-0">Gráficos detallados y desglose de gastos por categorías para ver a dónde va el dinero.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="feature-card glass-panel h-100 p-4">
+                <div class="feature-icon-box mb-3">📄</div>
+                <h3 class="h5 brand-font mb-2">Reportes Exportables</h3>
+                <p class="small text-editorial-muted m-0">Descarga resúmenes en Excel y PDF para llevar la contabilidad fuera de la app.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Card -->
+    <div class="pricing-container mx-auto mb-6">
+        <div class="pricing-card main-pricing-card glass-panel p-5 text-center shadow-lg position-relative overflow-hidden">
+            <div class="popular-tag">RECOMENDADO</div>
+            
+            <p class="text-uppercase fw-bold text-primary mb-3 track-spacing">Plan Mensual</p>
+            <div class="d-flex align-items-center justify-content-center mb-4">
+                <span class="h2 m-0 currency-symbol">$</span>
+                <span class="display-3 m-0 brand-font price-value">5.99</span>
+                <span class="ms-2 text-editorial-muted">/ mes</span>
+            </div>
+
+            <ul class="list-unstyled text-start mx-auto mb-5 pricing-feature-list" style="max-width: 280px;">
+                <li class="mb-3 d-flex align-items-center gap-3">
+                    <span class="check-icon">✓</span> <span>Historial de auditoría completo</span>
+                </li>
+                <li class="mb-3 d-flex align-items-center gap-3">
+                    <span class="check-icon">✓</span> <span>Soporte prioritario 24/7</span>
+                </li>
+                <li class="mb-3 d-flex align-items-center gap-3">
+                    <span class="check-icon">✓</span> <span>Sin anuncios (Ad-Free)</span>
+                </li>
+                <li class="mb-3 d-flex align-items-center gap-3">
+                    <span class="check-icon">✓</span> <span>Categorías Personalizadas</span>
+                </li>
+            </ul>
+
+            <button class="editorial-button-primary w-100 py-3 mb-4 emerald-gold-gradient shadow-glow" @onclick="HandleUpgrade">
+                Obtener Premium Ahora 🚀
+            </button>
+            <p class="x-small text-editorial-muted m-0">Compra segura procesada por Google Play Store</p>
+        </div>
+    </div>
+
+    <!-- Simulation Mode (Only for testing) -->
+    <div class="simulation-footer mt-5 p-4 border-top text-center opacity-75">
+        <p class="small text-editorial-muted mb-3">🧪 ¿Estás en un entorno de pruebas?</p>
+        <button class="btn btn-outline-warning rounded-pill px-4" @onclick="SimulateSuccess">
+            [ SIMULAR COMPRA EXITOSA ]
+        </button>
+    </div>
+</div>
+
+@code {
+    private async Task HandleUpgrade()
+    {
+        // En un escenario real, aquí se llamaría al SDK de Google Play
+        ToastService.ShowToast("Integración con Play Store pendiente: usa el botón de simulación abajo.", ToastLevel.Info);
+    }
+
+    private async Task SimulateSuccess()
+    {
+        await LocalStorage.SetItemAsync("is_simulated_premium", true);
+        ToastService.ShowToast("¡Bienvenido al nivel Premium! 🌟", ToastLevel.Success);
+        
+        // Efecto de confeti o espera
+        await Task.Delay(1500);
+        Navigation.NavigateTo("/");
+    }
+}

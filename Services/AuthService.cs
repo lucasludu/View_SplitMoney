@@ -10,12 +10,15 @@ namespace SplitMoney.Client.Services
     {
         private readonly HttpClient _httpClient;
         private readonly AuthenticationStateProvider _authenticationStateProvider;
+        private readonly Blazored.LocalStorage.ILocalStorageService _localStorage;
 
         public AuthService(HttpClient httpClient,
-                           AuthenticationStateProvider authenticationStateProvider)
+                           AuthenticationStateProvider authenticationStateProvider,
+                           Blazored.LocalStorage.ILocalStorageService localStorage)
         {
             _httpClient = httpClient;
             _authenticationStateProvider = authenticationStateProvider;
+            _localStorage = localStorage;
         }
 
         public async Task<Response<LoginResponse>> Login(LoginRequest loginRequest)
@@ -56,6 +59,9 @@ namespace SplitMoney.Client.Services
             {
                 SecureStorage.Default.Remove("authToken");
                 SecureStorage.Default.Remove("refreshToken");
+                
+                // Clear any simulated premium state on logout
+                await _localStorage.RemoveItemAsync("is_simulated_premium");
 
                 ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
 
@@ -89,6 +95,19 @@ namespace SplitMoney.Client.Services
             }
 
             return string.Empty;
+        }
+        public async Task<Response<UserDto>> GetProfile()
+        {
+            var response = await _httpClient.GetAsync("api/v1/User/me");
+            var result = await response.Content.ReadFromJsonAsync<Response<UserDto>>();
+            return result!;
+        }
+
+        public async Task<Response<string>> UpdateProfile(UserDto userUpdate)
+        {
+            var response = await _httpClient.PutAsJsonAsync("api/v1/Auth/profile", userUpdate);
+            var result = await response.Content.ReadFromJsonAsync<Response<string>>();
+            return result!;
         }
     }
 }
