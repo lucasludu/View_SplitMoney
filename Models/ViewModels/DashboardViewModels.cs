@@ -58,6 +58,8 @@ public class CreateExpenseModel
     public decimal TotalAmount { get; set; }
     public string GroupId { get; set; } = string.Empty;
     public Guid? CategoryId { get; set; }
+    public string Currency { get; set; } = "ARS";
+    public DateTime Date { get; set; } = DateTime.Now;
     public SplitType SelectedSplitType { get; set; } = SplitType.Equal;
     public List<ExpenseSplitViewModel> Splits { get; set; } = new();
     public List<ExpensePaymentViewModel> Payments { get; set; } = new();
@@ -155,4 +157,18 @@ public class CategorySpendingViewModel
     public string CategoryColor { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public double Percentage { get; set; }
+}
+
+public class SettlementViewModel
+{
+    public Guid Id { get; set; }
+    public Guid GroupId { get; set; }
+    public string GroupName { get; set; } = string.Empty;
+    public string PayerId { get; set; } = string.Empty;
+    public string PayeeId { get; set; } = string.Empty;
+    public string PayeeName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string? ProofImageUrl { get; set; }
 }

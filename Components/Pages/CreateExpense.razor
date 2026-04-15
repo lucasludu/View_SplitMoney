@@ -426,6 +426,7 @@
             {
                 expense.Title = detail.Description;
                 expense.TotalAmount = detail.TotalAmount;
+                expense.Date = detail.Date;
                 expense.CategoryId = categories.FirstOrDefault(c => c.IconIdentifier == detail.CategoryIcon)?.Id;
                 
                 // Note: We need GroupId to load members. We search it by GroupName for now 

@@ -7,6 +7,8 @@
 @inject NavigationManager Navigation
 @inject IModalService ModalService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
 
 <div class="container-fluid px-3 py-4 p-md-5 profile-container">
     
@@ -167,6 +169,7 @@
     private UserDto userProfile = new();
     private bool isLoading = true;
     private bool submitting = false;
+    private bool isSimulatedPremium = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -176,6 +179,13 @@
             if (response != null && response.Succeeded && response.Data != null)
             {
                 userProfile = response.Data;
+                
+                // --- Soporte para simulación Premium local ---
+                isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
+                if (isSimulatedPremium)
+                {
+                    userProfile.Role = "PremiumUser";
+                }
             }
             else
             {
@@ -185,8 +195,11 @@
         }
         catch (Exception)
         {
-            // If API fails, mock it with token info as fallback or just fail
-            ModalService.ShowModal("Error de Sincronización", "Hay un problema conectando con el servidor de perfiles.", ModalType.Error);
+            // Fallback for dev if API is down
+            isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
+            if (isSimulatedPremium) userProfile.Role = "PremiumUser";
+            
+            isLoading = false;
         }
         finally
         {

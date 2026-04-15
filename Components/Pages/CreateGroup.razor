@@ -1,4 +1,5 @@
 @page "/groups/new"
+@page "/groups/edit/{GroupId:guid}"
 @using SplitMoney.Client.Services
 @using SplitMoney.Client.Models.ViewModels
 @using System.Security.Claims
@@ -18,8 +19,8 @@
             <span class="back-icon">⬅️</span>
         </button>
         <div>
-            <p class="mb-1 header-label">Nuevos Círculos</p>
-            <h1 class="brand-font m-0 h2-responsive">Crear Nuevo Grupo</h1>
+            <p class="mb-1 header-label">@(GroupId.HasValue ? "Gestión" : "Nuevos Círculos")</p>
+            <h1 class="brand-font m-0 h2-responsive">@(GroupId.HasValue ? "Editar Grupo" : "Crear Nuevo Grupo")</h1>
         </div>
     </div>
 
@@ -84,7 +85,7 @@
                 }
                 else
                 {
-                    <span>Crear Grupo y Empezar 🌐</span>
+                    <span>@(GroupId.HasValue ? "Guardar Cambios" : "Crear Grupo y Empezar") 🌐</span>
                 }
             </button>
         </form>
@@ -100,6 +101,9 @@
     private bool submitting = false;
     private bool isPremium = false;
 
+    [Parameter]
+    public Guid? GroupId { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -111,7 +115,21 @@
 
         userEmail = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "";
         
-        if (!string.IsNullOrEmpty(userEmail))
+        if (GroupId.HasValue)
+        {
+            var userGroups = await ExpenseService.GetUserGroupsAsync();
+            var group = userGroups.FirstOrDefault(g => g.Id == GroupId.Value.ToString());
+            if (group != null)
+            {
+                groupName = group.Name;
+                var currentMembers = await ExpenseService.GetGroupMembersAsync(group.Id);
+                members = currentMembers.Select(m => new MemberSpendRecordViewModel { 
+                    Email = m.Email, // We need Email from GroupMemberResponse. Does it have it?
+                    AmountSpent = 0 
+                }).ToList();
+            }
+        }
+        else if (!string.IsNullOrEmpty(userEmail))
         {
             members.Add(new MemberSpendRecordViewModel { Email = userEmail, AmountSpent = 0 });
         }
@@ -146,18 +164,31 @@
         if (string.IsNullOrWhiteSpace(groupName)) return;
 
         submitting = true;
-        // Enviamos los miembros con monto 0, ya que así lo maneja el backend ahora de forma limpia
-        var success = await ExpenseService.CreateGroupAsync(groupName, members);
+        bool success;
+
+        if (GroupId.HasValue)
+        {
+            success = await ExpenseService.UpdateGroupAsync(GroupId.Value, groupName, members);
+        }
+        else
+        {
+            success = await ExpenseService.CreateGroupAsync(groupName, members);
+        }
+        
         submitting = false;
 
         if (success)
         {
-            ModalService.ShowModal("¡Círculo Creado!", $"El grupo '{groupName}' ha sido registrado con éxito. ¡Ya puedes empezar a cargar gastos!", ModalType.Success);
+            ModalService.ShowModal(
+                GroupId.HasValue ? "¡Actualizado!" : "¡Círculo Creado!", 
+                GroupId.HasValue ? $"Los cambios en '{groupName}' se guardaron correctamente." : $"El grupo '{groupName}' ha sido registrado con éxito.", 
+                ModalType.Success
+            );
             Navigation.NavigateTo("/groups");
         }
         else
         {
-            ModalService.ShowModal("Error al Crear", "No pudimos guardar el grupo en este momento. Por favor, verifica tu conexión e intenta de nuevo.", ModalType.Error);
+            ModalService.ShowModal("Error", "No pudimos procesar la solicitud en este momento.", ModalType.Error);
         }
     }
 }

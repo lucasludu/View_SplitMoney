@@ -67,6 +67,32 @@
         </div>
     }
 
+    @if (mySettlements != null && mySettlements.Any())
+    {
+        <div class="mb-5">
+            <p class="section-label mb-4 section-header-label mt-4">HISTORIAL DE PAGOS REALIZADOS</p>
+            <div class="d-flex flex-column gap-3">
+                @foreach (var settlementRecord in mySettlements)
+                {
+                    <div class="editorial-card p-3 d-flex justify-content-between align-items-center shadow-sm debt-card-item opacity-75">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="member-avatar bg-success text-white creditor-avatar-box">
+                                ✅
+                            </div>
+                            <div>
+                                <p class="m-0 fw-bold creditor-name-txt">Pagaste a @settlementRecord.PayeeName</p>
+                                <p class="m-0 text-editorial-muted group-name-micro">@settlementRecord.Date.ToString("dd MMM yyyy") en @settlementRecord.GroupName</p>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <p class="m-0 fw-bold text-success debt-amount-txt">@settlementRecord.Amount.ToString("C2")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
     @if (showForm)
     {
         <div class="details-overlay d-flex align-items-center justify-content-center p-3 settle-modal-overlay" @onclick="() => showForm = false">
@@ -122,6 +148,7 @@
 @code {
     private SettleDebtModel settlement = new();
     private List<DebtSummaryViewModel> myDebts = new();
+    private List<SettlementViewModel> mySettlements = new();
     private bool isLoading = true;
     private bool showForm = false;
     private string selectedCreditorName = "";
@@ -131,13 +158,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadMyDebts();
+        await LoadData();
     }
 
-    private async Task LoadMyDebts()
+    private async Task LoadData()
     {
         isLoading = true;
         myDebts.Clear();
+        mySettlements.Clear();
         
         try
         {
@@ -162,6 +190,8 @@
                 
                 myDebts.AddRange(activeDebts);
             }
+            
+            mySettlements = await ExpenseService.GetMySettlementsAsync();
         }
         finally
         {
@@ -199,7 +229,7 @@
         {
             ToastService.ShowToast($"¡Pago registrado! Cuentas saldadas con {selectedCreditorName} ✅", ToastLevel.Success);
             showForm = false;
-            await LoadMyDebts();
+            await LoadData();
         }
         else
         {

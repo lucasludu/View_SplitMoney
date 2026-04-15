@@ -19,4 +19,7 @@ public interface IExpenseService
     Task<ExpenseAuditViewModel?> GetExpenseAuditAsync(Guid expenseId);
     Task<GroupSpendingSummaryViewModel?> GetGroupSpendingSummaryAsync(Guid groupId);
     Task<byte[]?> ExportGroupReportAsync(Guid groupId);
+    Task<bool> UpdateGroupAsync(Guid id, string name, List<MemberSpendRecordViewModel> initialMembers);
+    Task<bool> DeleteGroupAsync(Guid id);
+    Task<List<SettlementViewModel>> GetMySettlementsAsync();
 }

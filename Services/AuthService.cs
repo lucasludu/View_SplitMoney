@@ -61,7 +61,14 @@ namespace SplitMoney.Client.Services
                 SecureStorage.Default.Remove("refreshToken");
                 
                 // Clear any simulated premium state on logout
-                await _localStorage.RemoveItemAsync("is_simulated_premium");
+                try
+                {
+                    await _localStorage.RemoveItemAsync("is_simulated_premium");
+                }
+                catch (InvalidOperationException)
+                {
+                    // Cannot invoke JS outside of a WebView context
+                }
 
                 ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
 

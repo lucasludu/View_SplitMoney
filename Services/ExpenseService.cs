@@ -55,6 +55,8 @@ public class ExpenseService : IExpenseService
             TotalAmount = expense.TotalAmount,
             GroupId = expense.GroupId,
             CategoryId = expense.CategoryId,
+            Currency = expense.Currency,
+            Date = expense.Date,
             Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
             Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
         };
@@ -162,6 +164,8 @@ public class ExpenseService : IExpenseService
             TotalAmount = expense.TotalAmount,
             GroupId = expense.GroupId,
             CategoryId = expense.CategoryId,
+            Currency = expense.Currency,
+            Date = expense.Date,
             Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
             Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
         };
@@ -236,5 +240,48 @@ public class ExpenseService : IExpenseService
             return null;
         }
         catch { return null; }
+    }
+
+    public async Task<bool> UpdateGroupAsync(Guid id, string name, List<MemberSpendRecordViewModel> members)
+    {
+        var request = new 
+        { 
+            Id = id,
+            Name = name, 
+            Members = members.Select(m => new { Email = m.Email }).ToList()
+        };
+        var response = await _httpClient.PutAsJsonAsync($"api/v1/groups/{id}", request);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteGroupAsync(Guid id)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/v1/groups/{id}");
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<List<SettlementViewModel>> GetMySettlementsAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("api/v1/user/me/settlements");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<Response<List<SettlementViewModel>>>();
+                return result?.Data ?? new List<SettlementViewModel>();
+            }
+            return new List<SettlementViewModel>();
+        }
+        catch
+        {
+            return new List<SettlementViewModel>();
+        }
     }
 }
