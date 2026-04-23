@@ -16,42 +16,61 @@ namespace SplitMoney.Client.Infrastructure
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var response = await base.SendAsync(request, cancellationToken);
-
-            if (response.StatusCode == HttpStatusCode.Unauthorized && !request.RequestUri!.AbsolutePath.Contains("/api/v1/Auth/"))
+            try
             {
-                var authService = _serviceProvider.GetRequiredService<IAuthService>();
-                var newToken = await authService.RefreshToken();
+                var response = await base.SendAsync(request, cancellationToken);
 
-                if (!string.IsNullOrEmpty(newToken))
+                if (response.StatusCode == HttpStatusCode.Unauthorized && !request.RequestUri!.AbsolutePath.Contains("/api/v1/Auth/"))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("bearer", newToken);
-                    response = await base.SendAsync(request, cancellationToken);
-                }
-                else
-                {
-                    await authService.Logout();
-                    var toastService = _serviceProvider.GetRequiredService<IToastService>();
-                    var navigationManager = _serviceProvider.GetRequiredService<NavigationManager>();
+                    var authService = _serviceProvider.GetRequiredService<IAuthService>();
+                    var newToken = await authService.RefreshToken();
 
-                    toastService.ShowToast("Tu sesión ha expirado por inactividad.", ToastLevel.Warning);
-                    _ = MainThread.InvokeOnMainThreadAsync(async () =>
+                    if (!string.IsNullOrEmpty(newToken))
                     {
-                        // Esperamos un segundo para asegurar que el WebView se terminó de despertar
-                        await Task.Delay(100);
-                        try
-                        {
-                            navigationManager.NavigateTo("session-expired");
-                        }
-                        catch
-                        {
-                            // Si falla, el usuario caerá en la página principal y el AuthState lo sacará
-                        }
-                    });
+                        request.Headers.Authorization = new AuthenticationHeaderValue("bearer", newToken);
+                        response = await base.SendAsync(request, cancellationToken);
+                    }
+                    else
+                    {
+                        await HandleSessionExpired();
+                    }
                 }
-            }
 
-            return response;
+                return response;
+            }
+            catch (HttpRequestException)
+            {
+                // El servidor no responde (API apagada)
+                await HandleConnectionError();
+                throw;
+            }
+        }
+
+        private async Task HandleSessionExpired()
+        {
+            var authService = _serviceProvider.GetRequiredService<IAuthService>();
+            await authService.Logout();
+            var toastService = _serviceProvider.GetRequiredService<IToastService>();
+            var navigationManager = _serviceProvider.GetRequiredService<NavigationManager>();
+
+            toastService.ShowToast("Tu sesión ha expirado por inactividad.", ToastLevel.Warning);
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await Task.Delay(100);
+                navigationManager.NavigateTo("session-expired");
+            });
+        }
+
+        private async Task HandleConnectionError()
+        {
+            var authService = _serviceProvider.GetRequiredService<IAuthService>();
+            await authService.Logout();
+            var navigationManager = _serviceProvider.GetRequiredService<NavigationManager>();
+
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                navigationManager.NavigateTo("login");
+            });
         }
     }
 }
