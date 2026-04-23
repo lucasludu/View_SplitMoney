@@ -9,8 +9,12 @@
             double cumulativePercent = 0;
             foreach (var item in Data.OrderByDescending(x => x.Percentage))
             {
-                var strokeDashArray = $"{(item.Percentage)} @(100 - item.Percentage)";
-                var strokeDashOffset = -cumulativePercent;
+                // Formateamos con InvariantCulture para asegurar el punto decimal en el SVG
+                var percentageStr = item.Percentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                var remainingStr = (100 - item.Percentage).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                
+                var strokeDashArray = $"{percentageStr} {remainingStr}";
+                var strokeDashOffset = (-cumulativePercent).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
                 
                 <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" 
                         fill="transparent" 

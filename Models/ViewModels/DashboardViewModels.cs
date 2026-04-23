@@ -17,6 +17,7 @@ public class RecentExpenseViewModel
     public decimal Amount { get; set; }
     public string CategoryIcon { get; set; } = "💰";
     public string CategoryColor { get; set; } = "#000000";
+    public bool IsConfirmed { get; set; } = true;
 }
 
 public class ExpenseDetailViewModel
@@ -28,6 +29,7 @@ public class ExpenseDetailViewModel
     public string GroupName { get; set; } = string.Empty;
     public string CategoryIcon { get; set; } = "💰";
     public string CategoryColor { get; set; } = "#000000";
+    public bool IsConfirmed { get; set; } = true;
     public SplitType SplitType { get; set; } = SplitType.Equal;
     public List<PaymentDetailViewModel> Payments { get; set; } = new();
     public List<SplitDetailViewModel> Splits { get; set; } = new();

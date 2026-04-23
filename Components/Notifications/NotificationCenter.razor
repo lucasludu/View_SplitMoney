@@ -1,0 +1,196 @@
+@using SplitMoney.Client.Models.ViewModels
+@inject INotificationService NotificationService
+@inject IToastService ToastService
+@inject NavigationManager Navigation
+
+<div class="notification-center">
+    <div class="notification-header d-flex align-items-center justify-content-between p-3 border-bottom">
+        <h6 class="m-0 fw-bold">Notificaciones</h6>
+        <div class="d-flex align-items-center gap-2">
+            @if (notifications.Any())
+            {
+                <button class="btn btn-link btn-sm text-decoration-none p-0 me-2 clear-all-btn" @onclick="ClearAll">Limpiar todo</button>
+                <span class="badge rounded-pill bg-primary">@notifications.Count</span>
+            }
+        </div>
+    </div>
+
+    <div class="notification-list" style="max-height: 400px; overflow-y: auto;">
+        @if (isLoading)
+        {
+            <div class="p-4 text-center">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            </div>
+        }
+        else if (!notifications.Any())
+        {
+            <div class="p-4 text-center text-primary">
+                <p class="m-0 small">No tienes notificaciones pendientes</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var notification in notifications)
+            {
+                <div class="notification-item p-3 border-bottom @(notification.IsRead ? "read" : "unread") position-relative">
+                    <button class="btn-dismiss" @onclick="() => DismissNotification(notification.Id)" title="Eliminar">✕</button>
+                    <div class="d-flex gap-3 pe-3">
+                        <div class="notification-icon">
+                            @if (notification.Type == NotificationType.ExpenseConfirmation)
+                            {
+                                <span class="icon">💰</span>
+                            }
+                            else
+                            {
+                                <span class="icon">🔔</span>
+                            }
+                        </div>
+                        <div class="notification-content flex-grow-1">
+                            <p class="m-0 small mb-1">@notification.Message</p>
+                            <div class="d-flex align-items-center justify-content-between mt-2">
+                                <span style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.9; font-weight: 500;">@GetTimeAgo(notification.CreatedAt)</span>
+                                @if (notification.Type == NotificationType.ExpenseConfirmation && notification.RelatedId.HasValue)
+                                {
+                                    <button class="btn btn-sm btn-primary py-0 px-2" style="font-size: 0.75rem;" 
+                                            @onclick="() => ConfirmExpense(notification.RelatedId.Value)">
+                                        Confirmar
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .notification-center {
+        width: 320px;
+        background: var(--surface-container-high);
+        border-radius: 16px;
+        border: 1px solid var(--outline-variant);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .notification-item {
+        transition: background 0.2s;
+    }
+
+    .notification-item.unread {
+        background: var(--surface-container-highest);
+    }
+
+    .notification-item:hover {
+        background: var(--surface-container-highest);
+    }
+
+    .notification-icon {
+        font-size: 1.2rem;
+    }
+
+    .clear-all-btn {
+        font-size: 0.7rem;
+        color: var(--primary);
+        font-weight: 600;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    .clear-all-btn:hover {
+        opacity: 1;
+        color: var(--primary);
+    }
+
+    .btn-dismiss {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: transparent;
+        border: none;
+        color: var(--on-surface-variant);
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        border-radius: 50%;
+        opacity: 0;
+        transition: all 0.2s;
+        z-index: 10;
+    }
+
+    .notification-item:hover .btn-dismiss {
+        opacity: 0.6;
+    }
+
+    .btn-dismiss:hover {
+        opacity: 1 !important;
+        background: var(--surface-container-highest);
+        color: var(--error, #ef4444);
+    }
+
+    /* En mobile el botón de cerrar es siempre visible pero sutil */
+    @@media (max-width: 768px) {
+        .btn-dismiss {
+            opacity: 0.4;
+        }
+    }
+</style>
+
+@code {
+    private List<NotificationViewModel> notifications = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotifications();
+    }
+
+    private async Task LoadNotifications()
+    {
+        isLoading = true;
+        notifications = await NotificationService.GetNotificationsAsync();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmExpense(Guid expenseId)
+    {
+        var success = await NotificationService.ConfirmExpenseAsync(expenseId);
+        if (success)
+        {
+            ToastService.ShowToast("Gasto confirmado correctamente.", ToastLevel.Success);
+            await LoadNotifications();
+        }
+        else
+        {
+            ToastService.ShowToast("Error al confirmar el gasto.", ToastLevel.Error);
+        }
+    }
+
+    private async Task DismissNotification(Guid id)
+    {
+        var success = await NotificationService.DeleteNotificationAsync(id);
+        if (success)
+        {
+            await LoadNotifications();
+        }
+    }
+
+    private async Task ClearAll()
+    {
+        var success = await NotificationService.ClearAllNotificationsAsync();
+        if (success)
+        {
+            await LoadNotifications();
+        }
+    }
+
+    private string GetTimeAgo(DateTime date)
+    {
+        var diff = DateTime.UtcNow - date;
+        if (diff.TotalMinutes < 1) return "Recién ahora";
+        if (diff.TotalMinutes < 60) return $"Hace {Math.Floor(diff.TotalMinutes)} min";
+        if (diff.TotalHours < 24) return $"Hace {Math.Floor(diff.TotalHours)} h";
+        return date.ToShortDateString();
+    }
+}

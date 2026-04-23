@@ -344,8 +344,8 @@
             var data = await ExpenseService.ExportGroupReportAsync(Guid.Parse(selectedGroup.Id));
             if (data != null)
             {
-                var fileName = $"Reporte_{selectedGroup.Name}_{DateTime.Now:yyyyMMdd}.csv";
-                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(data));
+                var fileName = $"Reporte_{selectedGroup.Name}_{DateTime.Now:yyyyMMdd}.xlsx";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Convert.ToBase64String(data));
                 ModalService.ShowModal("Exportación Exitosa", $"El reporte '{fileName}' fue generado y descargado correctamente.", ModalType.Success);
             }
             else

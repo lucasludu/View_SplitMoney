@@ -16,16 +16,26 @@ namespace SplitMoney.Client.Infrastructure
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var savedToken = await SecureStorage.Default.GetAsync("authToken");
-
-            if (string.IsNullOrWhiteSpace(savedToken))
+            try
             {
+                Console.WriteLine("AUTH: Checking SecureStorage for token...");
+                var savedToken = await SecureStorage.Default.GetAsync("authToken");
+                Console.WriteLine("AUTH: Token retrieval attempt finished.");
+
+                if (string.IsNullOrWhiteSpace(savedToken))
+                {
+                    return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+                }
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", savedToken);
+
+                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(savedToken), "jwt", System.Security.Claims.ClaimTypes.Name, System.Security.Claims.ClaimTypes.Role)));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AUTH ERROR: {ex.Message}");
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
             }
-
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", savedToken);
-
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(ParseClaimsFromJwt(savedToken), "jwt", System.Security.Claims.ClaimTypes.Name, System.Security.Claims.ClaimTypes.Role)));
         }
 
         public void MarkUserAsAuthenticated(string token)

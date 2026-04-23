@@ -26,6 +26,9 @@
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
     <script>
+        console.log("Blazor WebView starting...");
+    </script>
+    <script>
         window.downloadFile = (fileName, contentType, content) => {
             const byteCharacters = atob(content);
             const byteNumbers = new Array(byteCharacters.length);

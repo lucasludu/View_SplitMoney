@@ -4,6 +4,7 @@
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject IExpenseService ExpenseService
 @inject IModalService ModalService
+@inject INotificationService NotificationService
 
 <!-- Top Bar for Mobile -->
 <div class="top-row d-flex align-items-center justify-content-between d-md-none px-3 shadow-sm mobile-header">
@@ -16,7 +17,7 @@
 <!-- Backdrop Overlay for Mobile -->
 @if (!collapseNavMenu)
 {
-    <div class="menu-backdrop d-md-none" @onclick="ToggleNavMenu"></div>
+    <div class="menu-backdrop" @onclick="CloseAllOverlays"></div>
 }
 
 <!-- Sidebar / Overlay Mobile Menu -->
@@ -242,7 +243,15 @@
             var name = user.Claims.FirstOrDefault(c => c.Type == "FirstName" || c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
             if (!string.IsNullOrEmpty(name))
                 userName = name;
+            
+            // Removed notification refresh from here
         }
+    }
+
+    private void CloseAllOverlays()
+    {
+        collapseNavMenu = true;
+        StateHasChanged();
     }
 
     private void ToggleNavMenu() 

@@ -48,15 +48,25 @@
                             <td class="py-4">
                                 <div class="d-flex flex-column">
                                     <span style="font-weight: 600; font-size: 1.05rem; color: var(--on-surface);">@exp.Description</span>
-                                    <span class="d-block d-md-none mt-1" style="font-size: 0.8rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 1.5px;">
+                                    <span class="d-block d-md-none mt-1" style="font-size: 0.8rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 4px;">
                                         <span style="opacity: 0.7;">👥</span> @exp.GroupName
+                                        @if (!exp.IsConfirmed)
+                                        {
+                                            <span class="badge rounded-pill bg-warning text-dark px-2 ms-1" style="font-size: 0.6rem; text-transform: uppercase;">Pendiente</span>
+                                        }
                                     </span>
                                 </div>
                             </td>
                             <td class="hide-on-mobile py-4">
-                                <span class="badge" style="background-color: var(--surface-container-highest); color: var(--on-surface-variant); font-weight: 500; padding: 0.5rem 1rem; border-radius: 2rem; border: 1px solid var(--outline-variant); font-size: 0.8rem;">
-                                    @exp.GroupName
-                                </span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge" style="background-color: var(--surface-container-highest); color: var(--on-surface-variant); font-weight: 500; padding: 0.5rem 1rem; border-radius: 2rem; border: 1px solid var(--outline-variant); font-size: 0.8rem;">
+                                        @exp.GroupName
+                                    </span>
+                                    @if (!exp.IsConfirmed)
+                                    {
+                                        <span class="badge rounded-pill bg-warning text-dark px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Pendiente</span>
+                                    }
+                                </div>
                             </td>
                             <td class="text-end py-4">
                                 <span class="brand-font" style="font-weight: 700; font-size: 1.15rem; color: var(--primary);">@exp.Amount.ToString("C0")</span>

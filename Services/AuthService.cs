@@ -85,22 +85,39 @@ namespace SplitMoney.Client.Services
 
         public async Task<string> RefreshToken()
         {
-            var token = await SecureStorage.Default.GetAsync("authToken");
-            var refreshToken = await SecureStorage.Default.GetAsync("refreshToken");
-
-            var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/refresh-token", new RefreshTokenRequest { Token = token, RefreshToken = refreshToken });
-            var result = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
-
-            if (response.IsSuccessStatusCode && result!.Succeeded)
+            try
             {
-                await SecureStorage.Default.SetAsync("authToken", result.Data!.Token);
-                await SecureStorage.Default.SetAsync("refreshToken", result.Data.RefreshToken);
+                var token = await SecureStorage.Default.GetAsync("authToken");
+                var refreshToken = await SecureStorage.Default.GetAsync("refreshToken");
 
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result.Data.Token);
+                if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(refreshToken))
+                {
+                    await Logout();
+                    return string.Empty;
+                }
 
-                return result.Data.Token;
+                var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/refresh-token", new RefreshTokenRequest { Token = token, RefreshToken = refreshToken });
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
+                    if (result != null && result.Succeeded)
+                    {
+                        await SecureStorage.Default.SetAsync("authToken", result.Data!.Token);
+                        await SecureStorage.Default.SetAsync("refreshToken", result.Data.RefreshToken);
+
+                        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result.Data.Token);
+
+                        return result.Data.Token;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // If there's an error in the process or deserialization, we fail gracefully
             }
 
+            await Logout();
             return string.Empty;
         }
         public async Task<Response<UserDto>> GetProfile()
