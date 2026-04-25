@@ -1,0 +1,150 @@
+@page "/expenses/detail/{Id:guid}"
+@using SplitMoney.Client.Services
+@using SplitMoney.Client.Models.ViewModels
+@attribute [Authorize]
+@inject IExpenseService ExpenseService
+@inject NavigationManager Navigation
+@inject IToastService ToastService
+
+<div class="expense-detail-wrapper">
+    <div class="container-fluid px-3 py-4 p-md-5">
+        
+        <!-- Header -->
+        <div class="d-flex align-items-center mb-5 gap-3 fade-in">
+            <button class="back-btn-modern" @onclick="GoBack">
+                <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <div>
+                <p class="header-tag mb-1">Detalle del Gasto</p>
+                <h1 class="brand-font m-0 h2-responsive">@(expense?.Description ?? "Cargando...")</h1>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+            </div>
+        }
+        else if (expense == null)
+        {
+            <div class="error-box text-center p-5">
+                <span class="material-symbols-rounded display-1 text-danger mb-4">error_outline</span>
+                <h2 class="brand-font">Gasto no encontrado</h2>
+                <p class="opacity-50">Parece que este registro ya no existe o no tienes acceso.</p>
+                <button class="btn-primary-modern mt-4" @onclick="GoBack">Volver atrás</button>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4 fade-in-up">
+                <div class="col-12 col-lg-8">
+                    <!-- Hero Amount Card -->
+                    <div class="hero-amount-card mb-4" style="border-top: 4px solid @expense.CategoryColor;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="hero-label">Monto Total</p>
+                                <h2 class="hero-value brand-font">@expense.TotalAmount.ToString("C2")</h2>
+                                <p class="hero-subtext">@expense.Date.ToString("dd MMMM yyyy") en <strong>@expense.GroupName</strong></p>
+                            </div>
+                            <div class="hero-category-icon" style="background: @(expense.CategoryColor)20; color: @expense.CategoryColor;">
+                                <span class="material-symbols-rounded">@GetCategoryIcon(expense.CategoryIcon)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payments Section -->
+                    <div class="section-box mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <span class="material-symbols-rounded text-success">payments</span>
+                            <h3 class="section-title m-0">Quién pagó</h3>
+                        </div>
+                        <div class="member-stack">
+                            @foreach (var payment in expense.Payments)
+                            {
+                                <div class="member-row p-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar-mini">@payment.UserName.Substring(0, 1).ToUpper()</div>
+                                        <span class="member-name">@payment.UserName</span>
+                                    </div>
+                                    <span class="member-amount positive">+ @payment.Amount.ToString("C0")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Splits Section -->
+                    <div class="section-box mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <span class="material-symbols-rounded text-danger">call_split</span>
+                            <h3 class="section-title m-0">Distribución</h3>
+                        </div>
+                        <div class="member-stack">
+                            @foreach (var split in expense.Splits)
+                            {
+                                <div class="member-row p-3 @(split.AmountOwed > 0 ? "" : "opacity-40")">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar-mini">@split.UserName.Substring(0, 1).ToUpper()</div>
+                                        <span class="member-name">@split.UserName</span>
+                                    </div>
+                                    <span class="member-amount @(split.AmountOwed > 0 ? "negative" : "")">@split.AmountOwed.ToString("C0")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Actions -->
+                <div class="col-12 col-lg-4">
+                    <div class="action-sidebar">
+                        <h4 class="section-title mb-4">Acciones</h4>
+                        <button class="sidebar-btn edit" @onclick="NavigateToEdit">
+                            <span class="material-symbols-rounded">edit</span>
+                            <span>Editar Gasto</span>
+                        </button>
+                        <button class="sidebar-btn delete mt-3" @onclick="ConfirmDelete" disabled="@isDeleting">
+                            @if (isDeleting) { <div class="spinner-border spinner-border-sm"></div> }
+                            else {
+                                <span class="material-symbols-rounded">delete</span>
+                                <span>Eliminar Gasto</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private ExpenseDetailViewModel? expense;
+    private bool isLoading = true;
+    private bool isDeleting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try { expense = await ExpenseService.GetExpenseDetailsAsync(Id); }
+        finally { isLoading = false; }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/expenses");
+    private void NavigateToEdit() => Navigation.NavigateTo($"/expenses/edit/{Id}");
+
+    private async Task ConfirmDelete()
+    {
+        isDeleting = true;
+        var success = await ExpenseService.DeleteExpenseAsync(Id);
+        isDeleting = false;
+        if (success) { ToastService.ShowToast("Gasto eliminado", ToastLevel.Success); Navigation.NavigateTo("/expenses"); }
+        else ToastService.ShowToast("No se pudo eliminar", ToastLevel.Error);
+    }
+
+    private string GetCategoryIcon(string currentIcon) => currentIcon switch
+    {
+        "🛒" => "shopping_cart", "🍔" => "restaurant", "🏠" => "home",
+        "🚕" => "local_taxi", "🎉" => "celebration", "💡" => "lightbulb",
+        _ => "receipt_long"
+    };
+}

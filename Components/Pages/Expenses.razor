@@ -1,0 +1,102 @@
+@page "/expenses"
+@using SplitMoney.Client.Services
+@using SplitMoney.Client.Models.ViewModels
+@attribute [Authorize]
+@inject IExpenseService ExpenseService
+@inject NavigationManager Navigation
+
+<div class="expenses-wrapper">
+    <div class="container-fluid px-3 py-4 p-md-5">
+        
+        <!-- Header -->
+        <div class="d-flex align-items-center mb-5 gap-3 fade-in">
+            <button class="back-btn-modern" @onclick="GoBack">
+                <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <div>
+                <p class="header-tag mb-1">Actividad</p>
+                <h1 class="brand-font m-0">Todos los Gastos</h1>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+            </div>
+        }
+        else if (expenses == null || !expenses.Any())
+        {
+            <div class="empty-state-box fade-in-up">
+                <div class="empty-icon-wrapper">
+                    <span class="material-symbols-rounded">receipt_long</span>
+                </div>
+                <h2 class="brand-font">Sin registros</h2>
+                <p>Todavía no has cargado ningún gasto. ¡Empieza ahora!</p>
+                <button class="btn-primary-modern mt-4" @onclick='() => Navigation.NavigateTo("/expenses/new")'>Cargar Gasto</button>
+            </div>
+        }
+        else
+        {
+            <!-- Search Bar -->
+            <div class="search-container mb-4 fade-in">
+                <span class="material-symbols-rounded search-icon">search</span>
+                <input type="text" class="search-input" placeholder="Buscar por descripción..." @bind="searchTerm" @bind:event="oninput" />
+            </div>
+
+            <div class="expense-stack">
+                @foreach (var expense in FilteredExpenses)
+                {
+                    <div class="expense-card fade-in-up" @onclick="() => NavigateToDetail(expense.Id)">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="category-icon-box" style="background: @(expense.CategoryColor)20; color: @expense.CategoryColor;">
+                                <span class="material-symbols-rounded">@GetCategoryIcon(expense.CategoryIcon)</span>
+                            </div>
+                            <div class="expense-info">
+                                <p class="expense-desc">@expense.Description</p>
+                                <p class="expense-meta">@expense.Date.ToString("dd MMM yyyy") • @expense.GroupName</p>
+                            </div>
+                        </div>
+                        <div class="expense-value-box text-end">
+                            <p class="expense-amount">@expense.Amount.ToString("C0")</p>
+                            @if (!expense.IsConfirmed)
+                            {
+                                <span class="badge-pending">PENDIENTE</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<RecentExpenseViewModel>? expenses;
+    private bool isLoading = true;
+    private string searchTerm = "";
+
+    private IEnumerable<RecentExpenseViewModel> FilteredExpenses => 
+        expenses?.Where(e => string.IsNullOrEmpty(searchTerm) || e.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ?? Enumerable.Empty<RecentExpenseViewModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var dashboard = await ExpenseService.GetDashboardAsync();
+            expenses = dashboard?.RecentExpenses?.ToList();
+        }
+        finally { isLoading = false; }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/");
+    private void NavigateToDetail(Guid id) => Navigation.NavigateTo($"/expenses/detail/{id}"); // Placeholder logic or trigger home overlay if needed
+
+    private string GetCategoryIcon(string currentIcon) => currentIcon switch
+    {
+        "🛒" => "shopping_cart", "🍔" => "restaurant", "🏠" => "home",
+        "🚕" => "local_taxi", "🎉" => "celebration", "💡" => "lightbulb",
+        _ => "receipt_long"
+    };
+}

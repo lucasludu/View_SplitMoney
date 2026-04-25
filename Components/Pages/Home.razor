@@ -45,7 +45,7 @@
         position: absolute;
         top: 55px;
         right: 0;
-        z-index: 3000; /* Super high to be above everything */
+        z-index: 9999; /* Máxima prioridad */
         animation: fadeInDown 0.3s ease-out;
     }
 
@@ -55,7 +55,7 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        z-index: 2900;
+        z-index: 9990;
         background: transparent;
     }
 
@@ -64,13 +64,18 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
+    .header-main-wrapper {
+        position: relative;
+        z-index: 100; /* Prioridad sobre el contenido de abajo */
+    }
+
     @@media (max-width: 767.98px) {
         .notification-overlay-home {
             position: fixed;
             top: 70px;
             right: 15px;
             left: 15px;
-            z-index: 4000;
+            z-index: 9999 !important;
         }
         .notification-overlay-home > div {
             width: 100% !important;
@@ -80,32 +85,37 @@
 
 <div class="container-fluid px-3 py-4 p-md-4 container-max">
    
-    <!-- Welcome Header -->
-    <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
-        <div class="mb-0" style="min-width: 0;">
-            <p class="mb-1 perspective-label">@(isPremium ? "Master Perspective" : "Personal View")</p>
-            <h1 class="brand-font m-0 h1-responsive text-truncate home-title">Hola, <span>@userName</span></h1>
-        </div>
-        <div class="d-flex align-items-center gap-2 flex-shrink-0 mt-1">
-            <div class="notification-trigger-container">
-                <button class="btn rounded-circle shadow-sm circle-btn-container" @onclick="ToggleNotifications" title="Notificaciones">
-                    <span>💡</span>
-                </button>
-                @if (unreadCount > 0)
-                {
-                    <span class="notification-badge">@unreadCount</span>
-                }
-
-                @if (showNotifications)
-                {
-                    <div class="notification-overlay-home shadow-lg">
-                        <NotificationCenter />
-                    </div>
-                    <div class="notification-backdrop" @onclick="() => showNotifications = false"></div>
-                }
+    <!-- Welcome Header Wrapper -->
+    <div class="header-main-wrapper fade-in">
+        <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
+            <div class="mb-0" style="min-width: 0;">
+                <p class="perspective-label mb-1">
+                    <span class="material-symbols-rounded" style="font-size: 0.9rem; vertical-align: middle;">@(isPremium ? "workspace_premium" : "person")</span>
+                    @(isPremium ? "Master Perspective" : "Personal View")
+                </p>
+                <h1 class="brand-font m-0 h1-responsive text-truncate home-title">Hola, <span>@userName</span></h1>
             </div>
-            <div class="hide-on-mobile">
-                <span class="badge rounded-pill architect-badge">@(isPremium ? "Architect Staff" : "Standard")</span>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0 mt-1">
+                <div class="notification-trigger-container">
+                    <button class="btn circle-btn-container" @onclick="ToggleNotifications" title="Notificaciones">
+                        <span class="material-symbols-rounded">notifications</span>
+                    </button>
+                    @if (unreadCount > 0)
+                    {
+                        <span class="notification-badge">@unreadCount</span>
+                    }
+
+                    @if (showNotifications)
+                    {
+                        <div class="notification-overlay-home shadow-lg">
+                            <NotificationCenter />
+                        </div>
+                        <div class="notification-backdrop" @onclick="() => showNotifications = false"></div>
+                    }
+                </div>
+                <div class="hide-on-mobile">
+                    <span class="badge architect-badge">@(isPremium ? "Premium Member" : "Standard Account")</span>
+                </div>
             </div>
         </div>
     </div>
@@ -113,40 +123,37 @@
     @if (isLoading)
     {
         <!-- Skeleton Stats Grid -->
-        <div class="row g-3 mb-4 flex-nowrap overflow-auto pb-2">
-            @for (int i = 0; i < 3; i++)
-            {
-                <div class="col-10 col-md-4">
-                    <div class="skeleton" style="height: 120px; border-radius: 1.5rem; width: 100%;"></div>
-                </div>
-            }
+        <div class="stats-skeleton-container mb-4">
+            <div class="skeleton-stat-card"></div>
+            <div class="skeleton-stat-card"></div>
+            <div class="skeleton-stat-card"></div>
         </div>
 
         <!-- Skeleton Table -->
         <div class="col-12">
-            <div class="skeleton" style="height: 400px; border-radius: 2rem; width: 100%;"></div>
+            <div class="skeleton" style="height: 400px; border-radius: 1.5rem; width: 100%;"></div>
         </div>
     }
     else if (dashboard != null)
     {
         @if (IsDashboardEmpty())
         {
-            <div class="editorial-card text-center py-6 px-4 mb-4 shadow-lg border-primary empty-dashboard-card">
-                <div class="mb-4 mx-auto empty-dashboard-icon-box">
-                    💰
+            <div class="empty-dashboard-card text-center p-5 mb-4 fade-in">
+                <div class="empty-icon-box mb-4">
+                    <span class="material-symbols-rounded">account_balance_wallet</span>
                 </div>
-                <h2 class="brand-font mb-3 empty-dashboard-title">¡Bienvenido a SplitMoney!</h2>
-                <p class="mx-auto mb-5 empty-dashboard-text">
+                <h2 class="brand-font mb-3">¡Bienvenido a SplitMoney!</h2>
+                <p class="empty-text mb-5">
                     Empieza a dividir tus gastos con amigos y familiares de forma inteligente. Crea tu primer círculo o registra un gasto para ver tus balances aquí.
                 </p>
                 <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
-                    <a href="/groups/new" class="editorial-button-primary d-inline-flex align-items-center justify-content-center gap-2" style="width: auto; padding: 1rem 2.5rem; font-size: 1rem;">
-                        <span>Crea un Círculo</span>
-                        <span style="font-size: 1.25rem;">👥</span>
+                    <a href="/groups/new" class="editorial-button-primary d-inline-flex align-items-center justify-content-center gap-2" style="width: auto; padding: 1rem 2rem;">
+                        <span>Crear un Círculo</span>
+                        <span class="material-symbols-rounded">group_add</span>
                     </a>
-                    <button @onclick="HandleCreateExpenseClick" class="btn rounded-pill border-primary d-inline-flex align-items-center justify-content-center gap-2" style="width: auto; padding: 1rem 2.5rem; font-size: 1rem; color: var(--primary); background: transparent;">
+                    <button @onclick="HandleCreateExpenseClick" class="btn modern-outline-btn d-inline-flex align-items-center justify-content-center gap-2">
                         <span>Cargar Gasto</span>
-                        <span style="font-size: 1.25rem;">🚀</span>
+                        <span class="material-symbols-rounded">add_circle</span>
                     </button>
                 </div>
             </div>
@@ -156,7 +163,7 @@
             <StatsGrid TeDeben="dashboard.TotalToReceive" Debes="dashboard.TotalToPay" TotalMes="dashboard.TotalMonthSpending" />
 
             <!-- Main Dashboard Row -->
-            <div class="row g-4">
+            <div class="row g-4 fade-in-up">
                 <div class="col-12">
                     <RecentExpensesTable Expenses="dashboard.RecentExpenses" OnExpenseSelected="ShowExpenseDetail" />
                 </div>
@@ -165,16 +172,16 @@
     }
     else if (!isLoading && dashboard == null)
     {
-        <div class="editorial-card text-center py-6 px-4 mb-4 shadow-lg error-card">
-            <div class="mb-4 mx-auto error-icon-box">
-                ❌
+        <div class="error-card text-center p-5 mb-4 fade-in">
+            <div class="error-icon-box mb-4">
+                <span class="material-symbols-rounded">error</span>
             </div>
-            <h2 class="brand-font mb-2" style="font-size: 1.5rem; color: var(--on-surface);">Error de Conexión</h2>
-            <p class="mx-auto mb-4" style="color: var(--on-surface-variant); max-width: 320px; line-height: 1.6; font-size: 0.95rem;">
-                No pudimos conectar con el servidor. Reintenta o revisa si la API está encendida y el puerto 7042 accesible.
+            <h2 class="brand-font mb-2">Error de Conexión</h2>
+            <p class="error-text mb-4">
+                No pudimos conectar con el servidor. Reintenta o revisa tu conexión.
             </p>
             <button class="editorial-button-primary" style="width: auto; padding: 0.75rem 2rem;" @onclick="OnInitializedAsync">
-                Reintentar 🔄
+                Reintentar
             </button>
         </div>
     }

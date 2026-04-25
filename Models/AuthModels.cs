@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace SplitMoney.Client.Models
 {
     public class LoginRequest
@@ -8,11 +10,24 @@ namespace SplitMoney.Client.Models
 
     public class RegisterUserRequest
     {
+        [Required(ErrorMessage = "El nombre es obligatorio")]
         public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El apellido es obligatorio")]
         public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El email es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de email no válido")]
         public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La contraseña es obligatoria")]
+        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
         public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Debes confirmar la contraseña")]
+        [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
         public string Role { get; set; } = "User";
     }
 

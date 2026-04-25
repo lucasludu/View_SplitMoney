@@ -2,84 +2,231 @@
 
 .register-page-wrapper {
     min-height: 100vh;
-    background: radial-gradient(circle at top left, var(--primary-container), transparent 50%), 
-                radial-gradient(circle at bottom right, var(--surface-container-high), transparent 50%);
+    position: relative;
+    overflow: hidden;
+    background-color: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+}
+
+/* Glowing background orbs */
+.register-page-wrapper::before,
+.register-page-wrapper::after {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(120px);
+    z-index: 0;
+    opacity: 0.12;
+    animation: float 25s infinite ease-in-out alternate;
+}
+
+.register-page-wrapper::before {
+    background: var(--primary);
+    top: -200px;
+    left: -200px;
+}
+
+.register-page-wrapper::after {
+    background: #8b5cf6;
+    bottom: -200px;
+    right: -200px;
+    animation-delay: -12s;
+}
+
+@keyframes float {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(60px, 40px); }
 }
 
 .register-box {
     width: 100%;
     max-width: 480px;
-    padding: 2.5rem;
-}
-
-.register-title {
-    font-size: 2.5rem;
-    color: var(--primary);
-}
-
-.register-subtitle {
-    color: var(--on-surface-variant);
-}
-
-.register-error-alert {
-    background-color: var(--error-container);
-    border: none;
-    color: white;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.error-list {
-    margin-top: 5px;
-    padding-left: 15px;
-}
-
-.footer-text {
-    font-size: 0.875rem;
-    color: var(--on-surface-variant);
-}
-
-.input-wrapper {
+    padding: 3rem 2rem;
     position: relative;
+    z-index: 10;
+}
+
+.logo-box {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
-    width: 100%;
+    justify-content: center;
+    font-size: 2rem;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary), var(--primary-container));
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+    margin: 0 auto;
+}
+
+.app-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--on-surface);
+    letter-spacing: -0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    color: var(--on-surface-variant);
+    font-size: 0.95rem;
+}
+
+/* Modern Input Group */
+.input-group-modern {
+    position: relative;
+    margin-bottom: 0.75rem;
+}
+
+::deep .modern-input {
+    width: 100% !important;
+    background: #1a1e26 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 1rem !important;
+    padding: 1rem 1rem 1rem 3rem !important;
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s ease !important;
+}
+
+::deep .modern-input:focus {
+    background: #242933 !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    outline: none !important;
 }
 
 .input-icon {
     position: absolute;
-    left: 1.25rem;
+    left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 1.1rem;
-    z-index: 10;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1.2rem;
     pointer-events: none;
-    line-height: 1;
+    z-index: 5;
 }
 
-.input-wrapper ::deep .editorial-input {
-    padding-left: 3.75rem !important;
-    padding-right: 3.75rem !important;
-    transition: all 0.3s ease;
+::deep .modern-input:focus ~ .input-icon {
+    color: #2563eb;
 }
 
 .password-toggle-btn {
     position: absolute;
-    right: 1.25rem;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
     background: none;
     border: none;
-    color: var(--on-surface-variant);
-    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.4);
     padding: 0.5rem;
     cursor: pointer;
-    z-index: 10;
-    transition: transform 0.2s;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    z-index: 5;
 }
 
-.password-toggle-btn:hover {
-    transform: scale(1.1);
+/* Alerts */
+.alert-modern {
+    padding: 1rem;
+    border-radius: 1rem;
+    font-size: 0.9rem;
+}
+
+.alert-modern.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+
+.error-list {
+    padding-left: 1rem;
+}
+
+/* Primary Button */
+.btn-register {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border: none;
+    border-radius: 1rem;
+    padding: 1.1rem;
+    font-size: 1rem;
+    font-weight: 700;
+    width: 100%;
+    transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.btn-register:hover {
+    opacity: 0.95;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+}
+
+.btn-register:active { transform: scale(0.98); }
+
+.footer-text {
+    color: var(--on-surface-variant);
+    font-size: 0.9rem;
+}
+
+.login-link {
     color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+/* Animations */
+.fade-in-up {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+
+.spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-left-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Validation States */
+::deep .modern-input.modified.invalid {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.05) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+::deep .modern-input.modified.valid {
+    border-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.05) !important;
+}
+
+::deep .modern-input.modified.invalid ~ .input-icon {
+    color: #ef4444;
+}
+
+::deep .modern-input.modified.valid ~ .input-icon {
+    color: #10b981;
 }

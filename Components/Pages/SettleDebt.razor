@@ -8,141 +8,155 @@
 @inject IToastService ToastService
 @inject AuthenticationStateProvider AuthStateProvider
 
-<div class="container-fluid px-3 py-4 p-md-4 settle-container">
-    
-    <!-- Header with Back Button -->
-    <div class="d-flex align-items-center mb-5 gap-3">
-        <button class="btn rounded-circle shadow-sm back-btn-box" @onclick="GoBack">
-            <span class="back-icon-mini">⬅️</span>
-        </button>
-        <div>
-            <p class="mb-0 header-sub-label">Gestión de Cuentas</p>
-            <h1 class="brand-font m-0 h2 page-main-title">Saldar Deudas</h1>
-        </div>
-    </div>
-
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-3 text-editorial-muted">Buscando tus deudas pendientes...</p>
-        </div>
-    }
-    @if (myDebts == null || !myDebts.Any())
-    {
-        <div class="editorial-card text-center py-5 px-4 shadow-lg up-to-date-box">
-            <div class="mb-4 mx-auto up-to-date-icon">
-                ✨
-            </div>
-            <h2 class="brand-font mb-3 h4">¡Estás al día!</h2>
-            <p class="mx-auto mb-0 up-to-date-text">
-                No tienes deudas pendientes en ninguno de tus círculos. ¡Cuentas claras, amistades largas!
-            </p>
-        </div>
-    }
-    else
-    {
-        <div class="mb-5">
-            <p class="section-label mb-4 section-header-label">TUS DEUDAS ACTIVAS</p>
-            <div class="d-flex flex-column gap-3">
-                @foreach (var debt in myDebts)
-                {
-                    <div class="editorial-card p-3 d-flex justify-content-between align-items-center shadow-sm debt-card-item">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="member-avatar creditor-avatar-box">
-                                @debt.CreditorName.Substring(0, 1).ToUpper()
-                            </div>
-                            <div>
-                                <p class="m-0 fw-bold creditor-name-txt">@debt.CreditorName</p>
-                                <p class="m-0 text-editorial-muted group-name-micro">Círculo: @debt.GroupName</p>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <p class="m-0 fw-bold text-danger debt-amount-txt">@debt.Amount.ToString("C2")</p>
-                            <button class="btn btn-sm btn-outline-danger mt-1 rounded-pill px-3 settle-btn-mini" @onclick="() => SelectDebt(debt)">SALDAR</button>
-                        </div>
-                    </div>
-                }
+<div class="settle-wrapper">
+    <div class="container-fluid px-3 py-4 p-md-5">
+        
+        <!-- Header -->
+        <div class="d-flex align-items-center mb-5 gap-3 fade-in">
+            <button class="back-btn-modern" @onclick="GoBack">
+                <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <div>
+                <p class="header-tag mb-1">Cuentas Claras</p>
+                <h1 class="brand-font m-0">Saldar Deudas</h1>
             </div>
         </div>
-    }
 
-    @if (mySettlements != null && mySettlements.Any())
-    {
-        <div class="mb-5">
-            <p class="section-label mb-4 section-header-label mt-4">HISTORIAL DE PAGOS REALIZADOS</p>
-            <div class="d-flex flex-column gap-3">
-                @foreach (var settlementRecord in mySettlements)
-                {
-                    <div class="editorial-card p-3 d-flex justify-content-between align-items-center shadow-sm debt-card-item opacity-75">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="member-avatar bg-success text-white creditor-avatar-box">
-                                ✅
-                            </div>
-                            <div>
-                                <p class="m-0 fw-bold creditor-name-txt">Pagaste a @settlementRecord.PayeeName</p>
-                                <p class="m-0 text-editorial-muted group-name-micro">@settlementRecord.Date.ToString("dd MMM yyyy") en @settlementRecord.GroupName</p>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <p class="m-0 fw-bold text-success debt-amount-txt">@settlementRecord.Amount.ToString("C2")</p>
-                        </div>
-                    </div>
-                }
+        @if (isLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-3 opacity-50">Buscando deudas pendientes...</p>
             </div>
-        </div>
-    }
-
-    @if (showForm)
-    {
-        <div class="details-overlay d-flex align-items-center justify-content-center p-3 settle-modal-overlay" @onclick="() => showForm = false">
-            <div class="editorial-card shadow-2xl p-4 p-md-5 w-100 settlement-form-panel" @onclick:stopPropagation="true">
+        }
+        else if (myDebts == null || !myDebts.Any())
+        {
+            <div class="empty-state-box fade-in-up">
+                <div class="empty-icon-wrapper">
+                    <span class="material-symbols-rounded">celebration</span>
+                </div>
+                <h2 class="brand-font">¡Estás al día!</h2>
+                <p>No tienes deudas pendientes en ninguno de tus círculos. ¡Excelente gestión!</p>
+                <button class="btn-primary-modern mt-4" @onclick="GoBack">Volver al Inicio</button>
+            </div>
+        }
+        else
+        {
+            <div class="debts-section mb-5">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <span class="material-symbols-rounded section-icon">pending_actions</span>
+                    <p class="section-label m-0">DEUDAS ACTIVAS</p>
+                </div>
                 
-                <div class="text-center mb-5">
-                    <div class="mx-auto mb-4 scale-up-center payment-confirm-icon">
-                        💸
-                    </div>
-                    <p class="editorial-label mb-2 confirm-payment-label">Confirmar pago a <span class="text-primary">@selectedCreditorName</span></p>
-                    <div class="d-flex align-items-center justify-content-center py-3 rounded-4 amount-input-box">
-                        <span class="brand-font amount-currency-symbol">$</span>
-                        <input type="number" step="0.01"
-                               class="brand-font text-center amount-big-input" 
-                               @bind="settlement.Amount" />
-                    </div>
-                </div>
-
-                <div class="mb-5">
-                    <label class="editorial-label mb-3 payment-method-label">Medio de Pago</label>
-                    <div class="d-flex flex-column gap-2">
-                        @foreach (var method in paymentMethods)
-                        {
-                            <div class="editorial-selection-card p-3 rounded-4 d-flex align-items-center justify-content-between payment-selection-item @(selectedMethod == method ? "selected" : "")" 
-                                 @onclick="() => selectedMethod = method">
-                                <span style="font-size: 0.95rem; font-weight: 500;">@method</span>
-                                @if(selectedMethod == method) {
-                                    <span class="text-white">✓</span>
-                                }
+                <div class="debt-stack">
+                    @foreach (var debt in myDebts)
+                    {
+                        <div class="debt-card fade-in-up">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="creditor-avatar">
+                                    @debt.CreditorName.Substring(0, 1).ToUpper()
+                                </div>
+                                <div class="debt-info">
+                                    <p class="creditor-name">@debt.CreditorName</p>
+                                    <div class="group-tag">
+                                        <span class="material-symbols-rounded">group</span>
+                                        <span>@debt.GroupName</span>
+                                    </div>
+                                </div>
                             </div>
-                        }
-                    </div>
-                </div>
-
-                <div class="d-flex gap-3 mt-4">
-                    <button class="btn rounded-pill flex-grow-1 py-3 fw-bold cancel-modal-btn" @onclick="() => showForm = false">Cancelar</button>
-                    <button type="button" class="editorial-button-primary flex-grow-1" style="font-size: 0.9rem;" disabled="@submitting" @onclick="HandleSubmit">
-                        @if (submitting)
-                        {
-                            <span class="spinner-border spinner-border-sm" role="status"></span>
-                        }
-                        else
-                        {
-                            <span>Pagar Ahora 🚀</span>
-                        }
-                    </button>
+                            <div class="debt-action">
+                                <p class="debt-amount">@debt.Amount.ToString("C0")</p>
+                                <button class="btn-settle" @onclick="() => SelectDebt(debt)">
+                                    <span>Saldar</span>
+                                    <span class="material-symbols-rounded">payments</span>
+                                </button>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
-        </div>
-    }
+        }
+
+        @if (mySettlements != null && mySettlements.Any())
+        {
+            <div class="history-section mb-5">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <span class="material-symbols-rounded section-icon">history</span>
+                    <p class="section-label m-0">PAGOS REALIZADOS</p>
+                </div>
+                
+                <div class="history-stack">
+                    @foreach (var record in mySettlements)
+                    {
+                        <div class="history-item fade-in">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="history-icon-box">
+                                    <span class="material-symbols-rounded">check_circle</span>
+                                </div>
+                                <div class="history-info">
+                                    <p class="history-title">Pagaste a @record.PayeeName</p>
+                                    <p class="history-meta">@record.Date.ToString("dd MMM yyyy") • @record.GroupName</p>
+                                </div>
+                            </div>
+                            <p class="history-amount">@record.Amount.ToString("C0")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (showForm)
+        {
+            <div class="settle-modal-overlay" @onclick="() => showForm = false">
+                <div class="premium-modal fade-in-up" @onclick:stopPropagation="true">
+                    
+                    <div class="modal-header-premium">
+                        <div class="payment-icon-hero">
+                            <span class="material-symbols-rounded">send_money</span>
+                        </div>
+                        <h3 class="brand-font">Confirmar Pago</h3>
+                        <p class="modal-subtitle">Estás saldando tu cuenta con <strong>@selectedCreditorName</strong></p>
+                    </div>
+
+                    <div class="amount-hero-box mb-4">
+                        <span class="m-symbol">$</span>
+                        <input type="number" step="0.01" class="m-input brand-font" @bind="settlement.Amount" />
+                    </div>
+
+                    <div class="method-section mb-5">
+                        <label class="section-label mb-3">Medio de Pago</label>
+                        <div class="method-grid">
+                            @foreach (var method in paymentMethods)
+                            {
+                                <div class="method-card @(selectedMethod == method ? "active" : "")" 
+                                     @onclick="() => selectedMethod = method">
+                                    <span class="method-name">@method</span>
+                                    @if(selectedMethod == method) {
+                                        <span class="material-symbols-rounded check-icon">check_circle</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="modal-footer-btns">
+                        <button class="btn-cancel" @onclick="() => showForm = false">Cerrar</button>
+                        <button type="button" class="btn-submit-premium" disabled="@submitting" @onclick="HandleSubmit">
+                            @if (submitting)
+                            {
+                                <div class="spinner"></div>
+                            }
+                            else
+                            {
+                                <span>Confirmar Pago</span>
+                                <span class="material-symbols-rounded">task_alt</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 </div>
 
 @code {
@@ -156,10 +170,7 @@
     private bool submitting = false;
     private List<string> paymentMethods = new() { "💸 Efectivo", "🏦 Transferencia", "📱 Mercado Pago" };
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-    }
+    protected override async Task OnInitializedAsync() => await LoadData();
 
     private async Task LoadData()
     {
@@ -171,14 +182,13 @@
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var currentUserId = authState.User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == ClaimTypes.NameIdentifier)?.Value;
-            
             var groups = await ExpenseService.GetUserGroupsAsync();
             
             foreach (var group in groups)
             {
                 var balances = await ExpenseService.GetGroupBalancesAsync(group.Id);
                 var activeDebts = balances
-                    .Where(b => b.DebtorId == currentUserId)
+                    .Where(b => b.DebtorId == currentUserId && b.Amount > 0)
                     .Select(b => new DebtSummaryViewModel 
                     {
                         GroupId = Guid.Parse(group.Id),
@@ -187,26 +197,16 @@
                         CreditorName = b.CreditorName,
                         Amount = b.Amount
                     });
-                
                 myDebts.AddRange(activeDebts);
             }
-            
             mySettlements = await ExpenseService.GetMySettlementsAsync();
         }
-        finally
-        {
-            isLoading = false;
-        }
+        finally { isLoading = false; }
     }
 
     private void SelectDebt(DebtSummaryViewModel debt)
     {
-        settlement = new SettleDebtModel 
-        {
-            GroupId = debt.GroupId,
-            PayeeId = debt.CreditorId,
-            Amount = Math.Round(debt.Amount, 2)
-        };
+        settlement = new SettleDebtModel { GroupId = debt.GroupId, PayeeId = debt.CreditorId, Amount = Math.Round(debt.Amount, 2) };
         selectedCreditorName = debt.CreditorName;
         showForm = true;
     }
@@ -215,26 +215,15 @@
 
     private async Task HandleSubmit()
     {
-        if (settlement.Amount <= 0)
-        {
-            ToastService.ShowToast("Monto inválido", ToastLevel.Warning);
-            return;
-        }
-
+        if (settlement.Amount <= 0) { ToastService.ShowToast("Monto inválido", ToastLevel.Warning); return; }
         submitting = true;
         var success = await ExpenseService.SettleDebtAsync(settlement);
         submitting = false;
-
-        if (success)
-        {
-            ToastService.ShowToast($"¡Pago registrado! Cuentas saldadas con {selectedCreditorName} ✅", ToastLevel.Success);
+        if (success) {
+            ToastService.ShowToast("¡Pago registrado! ✅", ToastLevel.Success);
             showForm = false;
             await LoadData();
-        }
-        else
-        {
-            ToastService.ShowToast("Error al procesar el pago", ToastLevel.Error);
-        }
+        } else { ToastService.ShowToast("Error al procesar el pago", ToastLevel.Error); }
     }
 
     private class DebtSummaryViewModel

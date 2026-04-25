@@ -11,84 +11,95 @@
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject AuthenticationStateProvider AuthStateProvider
 
-<div class="container-fluid px-3 py-4 p-md-5 create-group-container">
-    
-    <!-- Header -->
-    <div class="d-flex align-items-center mb-5 gap-3">
-        <button class="btn rounded-circle back-button-circle" @onclick="GoBack">
-            <span class="back-icon">⬅️</span>
-        </button>
-        <div>
-            <p class="mb-1 header-label">@(GroupId.HasValue ? "Gestión" : "Nuevos Círculos")</p>
-            <h1 class="brand-font m-0 h2-responsive">@(GroupId.HasValue ? "Editar Grupo" : "Crear Nuevo Grupo")</h1>
+<div class="create-group-wrapper">
+    <div class="create-group-container px-3 py-5">
+        
+        <!-- Header -->
+        <div class="d-flex align-items-center mb-5 gap-3 fade-in">
+            <button class="back-btn" @onclick="GoBack" title="Volver">
+                <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <div>
+                <p class="header-tag mb-1">@(GroupId.HasValue ? "Configuración" : "Nuevo Círculo")</p>
+                <h1 class="brand-font m-0">@(GroupId.HasValue ? "Editar Grupo" : "Crear Grupo")</h1>
+            </div>
         </div>
-    </div>
 
-    <div class="editorial-card shadow-lg p-4 p-md-5">
-        <form @onsubmit="HandleSubmit">
-            <!-- Group Name -->
-            <div class="editorial-input-group mb-4">
-                <label class="editorial-label">Nombre del Grupo</label>
-                <input type="text" class="editorial-input brand-font group-name-input" placeholder="Ej: Viaje a Brasil 🇧🇷" @bind="groupName" required />
-            </div>
-
-            <!-- Description -->
-            <div class="editorial-input-group mb-5">
-                <label class="editorial-label">Descripción (Opcional)</label>
-                <input type="text" class="editorial-input" placeholder="¿De qué trata este grupo?" @bind="description" />
-            </div>
-
-            <!-- Add Members Section -->
-            <div class="mb-5">
-                <label class="editorial-label d-flex justify-content-between align-items-center mb-3">
-                    Invitados
-                    <span class="badge bg-primary rounded-pill">@(members.Count) personas</span>
-                </label>
-                
-                <div class="d-flex gap-2 mb-4">
-                    <div style="flex-grow: 1; position: relative;">
-                        <input type="email" class="editorial-input" placeholder="amigo@email.com" @bind="newMemberEmail" @onkeydown="@(e => { if(e.Key == "Enter") AddMember(); })" />
-                        <span style="position: absolute; right: 1rem; top: 1rem; opacity: 0.5;">✉️</span>
+        <div class="premium-card fade-in-up">
+            <form @onsubmit="HandleSubmit">
+                <!-- Group Identity Section -->
+                <div class="section-box mb-4">
+                    <div class="input-group-modern mb-4">
+                        <span class="material-symbols-rounded input-icon">label</span>
+                        <input type="text" class="modern-input group-name-field" placeholder="Nombre del grupo (ej: Viaje, Casa...)" @bind="groupName" required />
                     </div>
-                    <button type="button" class="editorial-button-primary add-member-btn" @onclick="AddMember">
-                        <span>Añadir</span>
-                    </button>
+
+                    <div class="input-group-modern">
+                        <span class="material-symbols-rounded input-icon">description</span>
+                        <input type="text" class="modern-input" placeholder="Descripción corta (opcional)" @bind="description" />
+                    </div>
                 </div>
 
-                <div class="members-list">
-                    @foreach (var m in members)
-                    {
-                        <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-3 member-item-card">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center member-avatar-circle">
-                                    @m.Email.Substring(0, 1).ToUpper()
+                <!-- Members Section -->
+                <div class="section-box mb-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="section-subtitle m-0">Integrantes</h3>
+                        <span class="member-count-badge">@(members.Count) miembros</span>
+                    </div>
+                    
+                    <div class="add-member-input-box mb-4">
+                        <div class="input-field-container">
+                            <span class="material-symbols-rounded field-icon">alternate_email</span>
+                            <input type="email" class="email-input" placeholder="amigo@correo.com" @bind="newMemberEmail" @onkeydown="@(e => { if(e.Key == "Enter") AddMember(); })" />
+                        </div>
+                        <button type="button" class="add-btn" @onclick="AddMember">
+                            <span class="material-symbols-rounded">add</span>
+                        </button>
+                    </div>
+
+                    <div class="members-stack">
+                        @foreach (var m in members)
+                        {
+                            <div class="member-row fade-in">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="member-avatar">
+                                        @m.Email.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <div class="member-info">
+                                        <span class="member-email">@m.Email</span>
+                                        @if (m.Email == userEmail)
+                                        {
+                                            <span class="you-pill">Tú (Creador)</span>
+                                        }
+                                    </div>
                                 </div>
-                                <span class="member-email-text">@m.Email</span>
-                                @if (m.Email == userEmail)
+                                @if (m.Email != userEmail)
                                 {
-                                    <span class="badge bg-secondary-subtle text-secondary me-badge">Tú</span>
+                                    <button type="button" class="remove-btn" @onclick="() => members.Remove(m)">
+                                        <span class="material-symbols-rounded">close</span>
+                                    </button>
                                 }
                             </div>
-                            @if (m.Email != userEmail)
-                            {
-                                <button type="button" class="btn btn-link btn-sm text-danger text-decoration-none" @onclick="() => members.Remove(m)">Quitar</button>
-                            }
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
-            </div>
 
-            <button type="submit" class="editorial-button-primary mt-4 py-3" disabled="@submitting">
-                @if (submitting)
-                {
-                    <span class="spinner-border spinner-border-sm"></span>
-                }
-                else
-                {
-                    <span>@(GroupId.HasValue ? "Guardar Cambios" : "Crear Grupo y Empezar") 🌐</span>
-                }
-            </button>
-        </form>
+                <div class="action-footer">
+                    <button type="submit" class="btn-submit-premium" disabled="@submitting">
+                        @if (submitting)
+                        {
+                            <div class="spinner"></div>
+                        }
+                        else
+                        {
+                            <span>@(GroupId.HasValue ? "Guardar Cambios" : "Crear Círculo")</span>
+                            <span class="material-symbols-rounded">check_circle</span>
+                        }
+                    </button>
+                    <p class="footer-hint mt-3">Al crear el grupo, se enviará una notificación a los invitados.</p>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -107,8 +118,6 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        
-        // Cargar estado premium real o simulado
         var isRealPremium = authState.User.IsInRole("PremiumUser");
         var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
         isPremium = isRealPremium || isSimulatedPremium;
@@ -124,7 +133,7 @@
                 groupName = group.Name;
                 var currentMembers = await ExpenseService.GetGroupMembersAsync(group.Id);
                 members = currentMembers.Select(m => new MemberSpendRecordViewModel { 
-                    Email = m.Email, // We need Email from GroupMemberResponse. Does it have it?
+                    Email = m.Email,
                     AmountSpent = 0 
                 }).ToList();
             }
@@ -142,14 +151,9 @@
             return;
         }
 
-        // Limit check for non-premium users
         if (!isPremium && members.Count >= 5)
         {
-            ModalService.ShowModal(
-                "Límite de Invitados", 
-                "Has alcanzado el límite de 5 personas por grupo para usuarios estándar. Desbloquea el plan Premium para crear círculos ilimitados y sin límites de invitados.", 
-                ModalType.Warning
-            );
+            ModalService.ShowModal("Límite de Invitados", "Los círculos estándar tienen un límite de 5 personas. Pásate a Premium para grupos sin límites.", ModalType.Warning);
             return;
         }
 
@@ -166,29 +170,19 @@
         submitting = true;
         bool success;
 
-        if (GroupId.HasValue)
-        {
-            success = await ExpenseService.UpdateGroupAsync(GroupId.Value, groupName, members);
-        }
-        else
-        {
-            success = await ExpenseService.CreateGroupAsync(groupName, members);
-        }
+        if (GroupId.HasValue) success = await ExpenseService.UpdateGroupAsync(GroupId.Value, groupName, members);
+        else success = await ExpenseService.CreateGroupAsync(groupName, members);
         
         submitting = false;
 
         if (success)
         {
-            ModalService.ShowModal(
-                GroupId.HasValue ? "¡Actualizado!" : "¡Círculo Creado!", 
-                GroupId.HasValue ? $"Los cambios en '{groupName}' se guardaron correctamente." : $"El grupo '{groupName}' ha sido registrado con éxito.", 
-                ModalType.Success
-            );
+            ToastService.ShowToast(GroupId.HasValue ? "Grupo actualizado" : "¡Círculo creado!", ToastLevel.Success);
             Navigation.NavigateTo("/groups");
         }
         else
         {
-            ModalService.ShowModal("Error", "No pudimos procesar la solicitud en este momento.", ModalType.Error);
+            ModalService.ShowModal("Error", "No se pudo procesar la solicitud.", ModalType.Error);
         }
     }
 }

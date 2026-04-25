@@ -1,31 +1,176 @@
 @inject NavigationManager Navigation
 
-<div class="row flex-nowrap overflow-auto pb-3 mb-4" style="margin-left: -0.25rem; margin-right: -0.25rem; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
-    <div class="col-10 col-md-4 px-2">
-        <div class="editorial-card text-center p-3 h-100" style="border-left: 4px solid #10b981; border-top-left-radius: 4px; border-bottom-left-radius: 4px; position: relative; overflow: hidden;">
-            <p class="editorial-label mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Te deben</p>
-            <h2 class="brand-font h2-responsive m-0" style="color: #10b981;">@TeDeben.ToString("C2")</h2>
+<div class="stats-container flex-nowrap overflow-auto pb-3 mb-4">
+    <!-- Card: Te Deben -->
+    <div class="stat-card-wrapper">
+        <div class="stat-card positive">
+            <div class="stat-icon-box">
+                <span class="material-symbols-rounded">call_received</span>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Te deben</p>
+                <h2 class="stat-value">@TeDeben.ToString("C2")</h2>
+            </div>
+            <div class="stat-bg-decoration"></div>
         </div>
     </div>
     
-    <div class="col-10 col-md-4 px-2">
-        <div class="editorial-card text-center p-3 h-100" style="border-left: 4px solid #ef4444; border-top-left-radius: 4px; border-bottom-left-radius: 4px; cursor: pointer; transition: transform 0.2s;" @onclick="NavigateToSettle">
-            <div class="d-flex justify-content-center align-items-center gap-2 mb-1">
-                <p class="editorial-label m-0" style="font-size: 0.75rem; text-transform: uppercase;">Debes</p>
-                <span class="badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">LIQUIDAR</span>
+    <!-- Card: Debes -->
+    <div class="stat-card-wrapper" @onclick="NavigateToSettle">
+        <div class="stat-card negative interactive">
+            <div class="stat-icon-box">
+                <span class="material-symbols-rounded">call_made</span>
             </div>
-            <h2 class="brand-font h2-responsive m-0" style="color: #ef4444;">@Debes.ToString("C2")</h2>
-            <p class="m-0 mt-1" style="font-size: 0.65rem; color: var(--on-surface-variant); opacity: 0.8;">Toca para saldar 💸</p>
+            <div class="stat-content">
+                <div class="d-flex align-items-center gap-2">
+                    <p class="stat-label">Debes</p>
+                    <span class="settle-badge">LIQUIDAR</span>
+                </div>
+                <h2 class="stat-value">@Debes.ToString("C2")</h2>
+                <p class="stat-hint">Toca para saldar</p>
+            </div>
+            <div class="stat-bg-decoration"></div>
         </div>
     </div>
 
-    <div class="col-10 col-md-4 px-2">
-        <div class="editorial-card text-center p-3 h-100" style="border-left: 4px solid var(--primary); border-top-left-radius: 4px; border-bottom-left-radius: 4px;">
-            <p class="editorial-label mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Gasto Total (Mes)</p>
-            <h2 class="brand-font h2-responsive m-0" style="color: var(--primary);">@TotalMes.ToString("C2")</h2>
+    <!-- Card: Total Mes -->
+    <div class="stat-card-wrapper">
+        <div class="stat-card neutral">
+            <div class="stat-icon-box">
+                <span class="material-symbols-rounded">calendar_month</span>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Gasto Total (Mes)</p>
+                <h2 class="stat-value">@TotalMes.ToString("C2")</h2>
+            </div>
+            <div class="stat-bg-decoration"></div>
         </div>
     </div>
 </div>
+
+<style>
+    .stats-container {
+        display: flex;
+        gap: 1rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .stats-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .stat-card-wrapper {
+        flex: 0 0 85%;
+        min-width: 280px;
+    }
+
+    @@media (min-width: 768px) {
+        .stat-card-wrapper {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+
+    .stat-card {
+        background: var(--surface-container);
+        border: 1px solid var(--outline-variant);
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        height: 100%;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .stat-card.interactive:active {
+        transform: scale(0.97);
+    }
+
+    .stat-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+    }
+
+    .stat-card.positive .stat-icon-box {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .stat-card.negative .stat-icon-box {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .stat-card.neutral .stat-icon-box {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--primary);
+    }
+
+    .stat-content {
+        z-index: 2;
+        flex-grow: 1;
+    }
+
+    .stat-label {
+        color: var(--on-surface-variant);
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin: 0.25rem 0 0 0;
+        color: var(--on-surface);
+    }
+
+    .stat-card.positive .stat-value { color: #10b981; }
+    .stat-card.negative .stat-value { color: #ef4444; }
+    .stat-card.neutral .stat-value { color: var(--primary); }
+
+    .stat-hint {
+        font-size: 0.65rem;
+        color: var(--on-surface-variant);
+        margin: 0.25rem 0 0 0;
+        opacity: 0.7;
+    }
+
+    .settle-badge {
+        background: #ef4444;
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 0.1rem 0.5rem;
+        border-radius: 100px;
+    }
+
+    .stat-bg-decoration {
+        position: absolute;
+        right: -20px;
+        bottom: -20px;
+        width: 100px;
+        height: 100px;
+        background: currentColor;
+        opacity: 0.03;
+        border-radius: 50%;
+        z-index: 1;
+        pointer-events: none;
+    }
+</style>
 
 @code {
     [Parameter] public decimal TeDeben { get; set; }

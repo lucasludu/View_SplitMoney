@@ -3,106 +3,104 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="register-page-wrapper d-flex align-items-center justify-content-center px-4">
-    <div class="editorial-card register-box shadow-lg">
-        <div class="text-center mb-5">
-            <h1 class="brand-font register-title">Crea tu Cuenta</h1>
-            <p class="register-subtitle">Únete a la mejor forma de dividir gastos.</p>
+<div class="register-page-wrapper">
+    <div class="register-box">
+        <!-- Logo/Header Area -->
+        <div class="text-center mb-5 fade-in-up">
+            <div class="logo-box mb-4">
+                <span class="material-symbols-rounded">person_add</span>
+            </div>
+            <h1 class="app-title">Crea tu Cuenta</h1>
+            <p class="subtitle">La mejor forma de dividir gastos con amigos.</p>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert alert-danger mb-4 register-error-alert">
-                <p class="mb-1 fw-bold">Hubo un problema:</p>
-                @if (errors.Any())
-                {
-                    <ul class="error-list">
-                        @foreach (var error in errors)
+            <div class="alert-modern error fade-in-up mb-4">
+                <div class="d-flex gap-3">
+                    <span class="material-symbols-rounded">error</span>
+                    <div>
+                        <p class="mb-1 fw-bold">Hubo un problema:</p>
+                        @if (errors.Any())
                         {
-                            <li>@error</li>
+                            <ul class="error-list m-0">
+                                @foreach (var error in errors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
                         }
-                    </ul>
-                }
-                else
-                {
-                    <p class="m-0">@errorMessage</p>
-                }
+                        else
+                        {
+                            <p class="m-0">@errorMessage</p>
+                        }
+                    </div>
+                </div>
             </div>
         }
 
         <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
             <DataAnnotationsValidator />
 
-            <div class="row g-3 mb-4">
+            <div class="row g-3 mb-3 fade-in-up delay-1">
                 <div class="col-6">
-                    <div class="editorial-input-group">
-                        <label class="editorial-label">Nombre</label>
-                        <div class="input-wrapper">
-                            <span class="input-icon">👤</span>
-                            <InputText @bind-Value="registerModel.FirstName" class="editorial-input w-100" placeholder="Lucas" />
-                        </div>
-                        <ValidationMessage For="@(() => registerModel.FirstName)" class="small text-danger mt-1" />
+                    <div class="input-group-modern">
+                        <span class="material-symbols-rounded input-icon">badge</span>
+                        <InputText @bind-Value="registerModel.FirstName" class="modern-input" placeholder="Nombre" autocomplete="given-name" />
                     </div>
+                    <ValidationMessage For="@(() => registerModel.FirstName)" class="small text-danger px-2" />
                 </div>
                 <div class="col-6">
-                    <div class="editorial-input-group">
-                        <label class="editorial-label">Apellido</label>
-                        <div class="input-wrapper">
-                            <span class="input-icon">🆔</span>
-                            <InputText @bind-Value="registerModel.LastName" class="editorial-input w-100" placeholder="Ludu" />
-                        </div>
-                        <ValidationMessage For="@(() => registerModel.LastName)" class="small text-danger mt-1" />
+                    <div class="input-group-modern">
+                        <span class="material-symbols-rounded input-icon">id_card</span>
+                        <InputText @bind-Value="registerModel.LastName" class="modern-input" placeholder="Apellido" autocomplete="family-name" />
                     </div>
+                    <ValidationMessage For="@(() => registerModel.LastName)" class="small text-danger px-2" />
                 </div>
             </div>
 
-            <div class="editorial-input-group mb-4">
-                <label class="editorial-label">Email</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">✉️</span>
-                    <InputText @bind-Value="registerModel.Email" class="editorial-input w-100" placeholder="nombre@ejemplo.com" />
+            <div class="fade-in-up delay-2">
+                <div class="input-group-modern">
+                    <span class="material-symbols-rounded input-icon">mail</span>
+                    <InputText @bind-Value="registerModel.Email" class="modern-input" placeholder="Correo electrónico" autocomplete="email" />
                 </div>
-                <ValidationMessage For="@(() => registerModel.Email)" class="small text-danger mt-1" />
+                <ValidationMessage For="@(() => registerModel.Email)" class="small text-danger mb-3 px-2" />
             </div>
 
-            <div class="editorial-input-group mb-4">
-                <label class="editorial-label">Contraseña</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">🔑</span>
-                    <InputText @bind-Value="registerModel.Password" type="@(showPassword ? "text" : "password")" class="editorial-input w-100" placeholder="••••••••" />
-                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword">
-                        @(showPassword ? "👁️" : "🙈")
+            <div class="fade-in-up delay-3">
+                <div class="input-group-modern">
+                    <span class="material-symbols-rounded input-icon">lock</span>
+                    <InputText @bind-Value="registerModel.Password" type="@(showPassword ? "text" : "password")" class="modern-input" placeholder="Contraseña" autocomplete="new-password" />
+                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword" tabindex="-1">
+                        <span class="material-symbols-rounded">@(showPassword ? "visibility" : "visibility_off")</span>
                     </button>
                 </div>
-                <ValidationMessage For="@(() => registerModel.Password)" class="small text-danger mt-1" />
+                <ValidationMessage For="@(() => registerModel.Password)" class="small text-danger mb-3 px-2" />
             </div>
 
-            <div class="editorial-input-group mb-5">
-                <label class="editorial-label">Confirmar Contraseña</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">✅</span>
-                    <InputText @bind-Value="registerModel.ConfirmPassword" type="@(showPassword ? "text" : "password")" class="editorial-input w-100" placeholder="••••••••" />
-                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword">
-                        @(showPassword ? "👁️" : "🙈")
-                    </button>
+            <div class="fade-in-up delay-4">
+                <div class="input-group-modern">
+                    <span class="material-symbols-rounded input-icon">lock_reset</span>
+                    <InputText @bind-Value="registerModel.ConfirmPassword" type="@(showPassword ? "text" : "password")" class="modern-input" placeholder="Confirmar contraseña" autocomplete="new-password" />
                 </div>
-                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="small text-danger mt-1" />
+                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="small text-danger mb-4 px-2" />
             </div>
 
-            <button type="submit" class="editorial-button-primary w-100 py-3 shadow-lg" disabled="@loading">
+            <button type="submit" class="btn-register fade-in-up delay-5" disabled="@loading">
                 @if (loading)
                 {
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <div class="spinner"></div>
                 }
                 else
                 {
-                    <span>Registrarse Ahora ✨</span>
+                    <span>Registrarse Ahora</span>
+                    <span class="material-symbols-rounded">sparkles</span>
                 }
             </button>
 
-            <div class="text-center mt-5">
+            <div class="text-center mt-5 fade-in-up delay-5">
                 <p class="footer-text">
-                    ¿Ya tienes cuenta? <a href="/login" class="text-primary text-decoration-none fw-bold ms-1">Inicia sesión</a>
+                    ¿Ya tienes cuenta? <a href="/login" class="login-link">Inicia sesión</a>
                 </p>
             </div>
         </EditForm>
@@ -141,7 +139,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}";
+            errorMessage = $"Error: {ex.Message}";
         }
         finally
         {

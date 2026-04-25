@@ -5,19 +5,19 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="login-page-wrapper d-flex align-items-center justify-content-center px-4">
-    <div class="glass-panel p-5 premium-modal-anim login-box">
-        <div class="text-center mb-5">
-            <div class="mb-4 mx-auto shadow-lg emerald-gradient logo-box">
-                💰
+<div class="login-page-wrapper px-4">
+    <div class="login-box premium-modal-anim">
+        <div class="text-center fade-in-up delay-1">
+            <div class="logo-box">
+                <span class="material-symbols-rounded">payments</span>
             </div>
-            <h1 class="brand-font app-title">SplitMoney</h1>
-            <p class="text-editorial-muted">Divide gastos, suma momentos.</p>
+            <h1 class="app-title">SplitMoney</h1>
+            <p class="subtitle">Divide gastos, suma momentos.</p>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert px-3 py-2 small mb-4 error-alert">
+            <div class="alert px-3 py-2 small mb-4 error-alert fade-in-up delay-2">
                 @errorMessage
             </div>
         }
@@ -25,44 +25,43 @@
         <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
             <DataAnnotationsValidator />
 
-            <div class="mb-4">
-                <label class="editorial-label mb-2 px-1">Email</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">✉️</span>
-                    <InputText @bind-Value="loginModel.Email" class="editorial-input w-100" placeholder="ejemplo@email.com" />
+            <div class="fade-in-up delay-2">
+                <div class="input-group-modern">
+                    <span class="material-symbols-rounded input-icon">mail</span>
+                    <InputText @bind-Value="loginModel.Email" class="modern-input" placeholder="Correo electrónico" autocomplete="email" />
                 </div>
-                <ValidationMessage For="@(() => loginModel.Email)" class="small text-danger mt-1 px-1" />
+                <ValidationMessage For="@(() => loginModel.Email)" class="small text-danger mb-2 px-2" />
             </div>
 
-            <div class="mb-4">
-                <label class="editorial-label mb-2 px-1">Contraseña</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">🔑</span>
-                    <InputText @bind-Value="loginModel.Password" type="@(showPassword ? "text" : "password")" class="editorial-input w-100" placeholder="••••••••" />
-                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword">
-                        @(showPassword ? "👁️" : "🙈")
+            <div class="fade-in-up delay-3">
+                <div class="input-group-modern">
+                    <span class="material-symbols-rounded input-icon">lock</span>
+                    <InputText @bind-Value="loginModel.Password" type="@(showPassword ? "text" : "password")" class="modern-input" placeholder="Contraseña" autocomplete="current-password" />
+                    <button type="button" class="password-toggle-btn" @onclick="() => showPassword = !showPassword" tabindex="-1">
+                        <span class="material-symbols-rounded">@(showPassword ? "visibility" : "visibility_off")</span>
                     </button>
                 </div>
-                <ValidationMessage For="@(() => loginModel.Password)" class="small text-danger mt-1 px-1" />
+                <ValidationMessage For="@(() => loginModel.Password)" class="small text-danger mb-2 px-2" />
             </div>
 
-            <div class="text-end mb-5">
+            <div class="text-end mb-4 fade-in-up delay-4">
                 <a href="/forgot-password" class="text-primary text-decoration-none small fw-bold">¿Olvidaste tu contraseña?</a>
             </div>
 
-            <button type="submit" class="editorial-button-primary emerald-gradient w-100 py-3 shadow-lg btn-login" disabled="@loading">
+            <button type="submit" class="btn-login fade-in-up delay-5" disabled="@loading">
                 @if (loading)
                 {
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <div class="spinner"></div>
                 }
                 else
                 {
-                    <span>Iniciar Sesión 🚀</span>
+                    <span>Iniciar Sesión</span>
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">arrow_forward</span>
                 }
             </button>
 
-            <div class="text-center mt-5">
-                <p class="small text-editorial-muted">
+            <div class="text-center mt-4 fade-in-up delay-5">
+                <p class="small" style="color: var(--on-surface-variant);">
                     ¿Eres nuevo? <a href="/register" class="text-primary text-decoration-none fw-bold ms-1">Crea una cuenta</a>
                 </p>
             </div>

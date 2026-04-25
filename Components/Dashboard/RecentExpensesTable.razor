@@ -1,143 +1,175 @@
 @using SplitMoney.Client.Models.ViewModels
 
-<div class="editorial-card shadow-sm" style="padding: 1.5rem; border: 1px solid var(--outline-variant); background: var(--surface-container-low);">
-    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
-        <div>
-            <h3 class="m-0 brand-font" style="font-size: 1.4rem; letter-spacing: -0.02em;">Últimos Gastos</h3>
-            <p class="m-0" style="font-size: 0.75rem; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em;">Actividad Reciente</p>
+<div class="recent-activity-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+        <h5 class="section-title m-0">Actividad Reciente</h5>
+        <a href="/expenses" class="view-all-link">Ver todo</a>
+    </div>
+
+    @if (Expenses == null || !Expenses.Any())
+    {
+        <div class="empty-state-small p-5 text-center">
+            <span class="material-symbols-rounded">history</span>
+            <p class="m-0 mt-2">No hay gastos recientes</p>
         </div>
-        @if (Expenses != null && Expenses.Any())
-        {
-            <div class="d-flex gap-2 mb-1 overflow-auto pb-1" style="max-width: 100%;">
-                <button class="btn btn-filter @(selectedGroup == null ? "active" : "")" @onclick="() => selectedGroup = null">Todos</button>
-                @foreach (var group in GetGroups())
-                {
-                    <button class="btn btn-filter @(selectedGroup == group ? "active" : "")" @onclick="() => selectedGroup = group">@group</button>
-                }
-            </div>
-        }
-    </div>
-    
-    <div class="table-responsive">
-        @if (FilteredExpenses != null && FilteredExpenses.Any())
-        {
-            <table class="table table-dark table-hover mb-0 align-middle" style="--bs-table-bg: transparent; --bs-table-border-color: var(--outline-variant); font-size: 0.95rem;">
-                <thead>
-                    <tr style="color: var(--on-surface-variant); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;">
-                        <th class="border-0 pb-3 hide-on-mobile">Fecha</th>
-                        <th class="border-0 pb-3">Detalle</th>
-                        <th class="border-0 pb-3 hide-on-mobile">Círculo</th>
-                        <th class="border-0 pb-3 text-end">Importe</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var exp in FilteredExpenses)
-                    {
-                        <tr style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border-bottom: 0.5px solid rgba(255,255,255,0.05); cursor: pointer;" @onclick="() => OnExpenseSelected.InvokeAsync(exp.Id)">
-                            <td class="hide-on-mobile py-4" style="color: var(--on-surface-variant);">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="shadow-sm" style="width: 40px; height: 40px; border-radius: 12px; background-color: var(--surface-container-highest); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1.5px solid @exp.CategoryColor;">
-                                        @exp.CategoryIcon
-                                    </div>
-                                    <div class="d-flex flex-column">
-                                        <span style="font-weight: 500; font-size: 0.9rem;">@exp.Date.ToString("dd MMM")</span>
-                                        <span class="d-md-none" style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">@exp.Date.ToString("t")</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-4">
-                                <div class="d-flex flex-column">
-                                    <span style="font-weight: 600; font-size: 1.05rem; color: var(--on-surface);">@exp.Description</span>
-                                    <span class="d-block d-md-none mt-1" style="font-size: 0.8rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 4px;">
-                                        <span style="opacity: 0.7;">👥</span> @exp.GroupName
-                                        @if (!exp.IsConfirmed)
-                                        {
-                                            <span class="badge rounded-pill bg-warning text-dark px-2 ms-1" style="font-size: 0.6rem; text-transform: uppercase;">Pendiente</span>
-                                        }
-                                    </span>
-                                </div>
-                            </td>
-                            <td class="hide-on-mobile py-4">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="badge" style="background-color: var(--surface-container-highest); color: var(--on-surface-variant); font-weight: 500; padding: 0.5rem 1rem; border-radius: 2rem; border: 1px solid var(--outline-variant); font-size: 0.8rem;">
-                                        @exp.GroupName
-                                    </span>
-                                    @if (!exp.IsConfirmed)
-                                    {
-                                        <span class="badge rounded-pill bg-warning text-dark px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Pendiente</span>
-                                    }
-                                </div>
-                            </td>
-                            <td class="text-end py-4">
-                                <span class="brand-font" style="font-weight: 700; font-size: 1.15rem; color: var(--primary);">@exp.Amount.ToString("C0")</span>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
-        else
-        {
-            <div class="text-center py-6 px-4" style="background: rgba(0,0,0,0.1); border-radius: 1.5rem; border: 1.5px dashed var(--outline-variant);">
-                <div class="mb-4 mx-auto" style="width: 80px; height: 80px; background: var(--surface-container-highest); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; opacity: 0.8; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-                    📝
+    }
+    else
+    {
+        <div class="activity-list">
+            @foreach (var expense in Expenses)
+            {
+                <div class="activity-card" @onclick="() => OnExpenseSelected.InvokeAsync(expense.Id)">
+                    <div class="activity-icon-container" style="background: @(expense.CategoryColor)20; color: @expense.CategoryColor;">
+                        <span class="material-symbols-rounded">@GetCategoryIcon(expense.CategoryIcon)</span>
+                    </div>
+                    <div class="activity-details">
+                        <p class="activity-description">@expense.Description</p>
+                        <p class="activity-meta">@expense.Date.ToString("dd MMM") • @expense.GroupName</p>
+                    </div>
+                    <div class="activity-amount @(!expense.IsConfirmed ? "pending" : "")">
+                        <p class="amount-value">@expense.Amount.ToString("C0")</p>
+                        @if (!expense.IsConfirmed)
+                        {
+                            <span class="status-indicator">Pendiente</span>
+                        }
+                    </div>
                 </div>
-                <h4 class="brand-font mb-2" style="font-size: 1.5rem; color: var(--on-surface);">Todo en orden por aquí</h4>
-                <p class="mx-auto mb-4" style="color: var(--on-surface-variant); max-width: 320px; line-height: 1.6; font-size: 0.95rem;">
-                    @(selectedGroup == null ? "Aún no hay gastos registrados este mes." : $"No hay gastos registrados en el grupo '{selectedGroup}'.")
-                </p>
-                @if (selectedGroup == null)
-                {
-                    <a href="/expenses/new" class="editorial-button-primary d-inline-flex align-items-center gap-2" style="width: auto; padding: 0.8rem 2rem; font-size: 0.9rem;">
-                        <span>Crear Mi Primer Gasto</span>
-                        <span style="font-size: 1.2rem;">🚀</span>
-                    </a>
-                }
-                else
-                {
-                    <button class="btn btn-sm btn-outline-secondary rounded-pill" @onclick="() => selectedGroup = null">Ver todos los gastos</button>
-                }
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 </div>
 
 <style>
-    .btn-filter {
-        background: var(--surface-container-highest);
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
         color: var(--on-surface-variant);
-        border: 1px solid var(--outline-variant);
-        border-radius: 2rem;
-        padding: 0.4rem 1rem;
+        opacity: 0.8;
+    }
+
+    .view-all-link {
         font-size: 0.8rem;
-        font-weight: 500;
+        font-weight: 700;
+        color: var(--primary);
+        text-decoration: none;
+    }
+
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .activity-card {
+        background: var(--surface-container);
+        border: 1px solid var(--outline-variant);
+        border-radius: 1.25rem;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
         transition: all 0.2s;
-        white-space: nowrap;
     }
-    .btn-filter:hover {
+
+    .activity-card:hover {
         background: var(--surface-container-high);
-        color: var(--on-surface);
+        transform: translateY(-2px);
     }
-    .btn-filter.active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-        box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+
+    .activity-card:active {
+        transform: scale(0.98);
+    }
+
+    .activity-icon-container {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    .activity-details {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .activity-description {
+        margin: 0;
+        font-weight: 700;
+        color: var(--on-surface);
+        font-size: 1rem;
+        text-truncate: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .activity-meta {
+        margin: 0;
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+    }
+
+    .activity-amount {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .amount-value {
+        margin: 0;
+        font-weight: 800;
+        color: var(--on-surface);
+        font-size: 1.1rem;
+    }
+
+    .activity-amount.pending .amount-value {
+        opacity: 0.6;
+    }
+
+    .status-indicator {
+        font-size: 0.6rem;
+        font-weight: 800;
+        background: rgba(255, 180, 0, 0.1);
+        color: #ffb400;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .empty-state-small {
+        background: var(--surface-container);
+        border: 1px dashed var(--outline-variant);
+        border-radius: 1.25rem;
+        color: var(--on-surface-variant);
+        font-size: 0.85rem;
+    }
+
+    .empty-state-small span {
+        font-size: 2rem;
+        opacity: 0.3;
     }
 </style>
 
 @code {
-    [Parameter]
-    public List<RecentExpenseViewModel> Expenses { get; set; } = new();
+    [Parameter] public IEnumerable<RecentExpenseViewModel>? Expenses { get; set; }
+    [Parameter] public EventCallback<Guid> OnExpenseSelected { get; set; }
 
-    [Parameter]
-    public EventCallback<Guid> OnExpenseSelected { get; set; }
-
-    private string? selectedGroup = null;
-
-    private IEnumerable<RecentExpenseViewModel> FilteredExpenses => 
-        selectedGroup == null ? Expenses : Expenses.Where(e => e.GroupName == selectedGroup);
-
-    private IEnumerable<string> GetGroups() => 
-        Expenses.Select(e => e.GroupName).Distinct().OrderBy(g => g);
+    private string GetCategoryIcon(string currentIcon)
+    {
+        return currentIcon switch
+        {
+            "🛒" => "shopping_cart",
+            "🍔" => "restaurant",
+            "🏠" => "home",
+            "🚕" => "local_taxi",
+            "🎉" => "celebration",
+            "💡" => "lightbulb",
+            _ => "receipt_long"
+        };
+    }
 }

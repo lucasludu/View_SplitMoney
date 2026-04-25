@@ -13,10 +13,10 @@
 
 <div class="container-fluid px-3 py-4 p-md-4 groups-container">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-5 fade-in">
         <div>
-            <p class="mb-1 header-tag">Gestión</p>
-            <h1 class="brand-font m-0 h1-responsive">Mis Grupos</h1>
+            <p class="header-tag mb-1">Tu Red</p>
+            <h1 class="brand-font m-0 h1-responsive">Mis Círculos</h1>
         </div>
     </div>
 
@@ -25,43 +25,43 @@
         <div class="d-flex flex-column gap-3">
             @for (int i = 0; i < 4; i++)
             {
-                <div class="skeleton" style="height: 80px; border-radius: 1rem; width: 100%;"></div>
+                <div class="skeleton" style="height: 90px; border-radius: 1.5rem; width: 100%;"></div>
             }
         </div>
     }
     else if (groups == null || !groups.Any())
     {
-        <div class="editorial-card text-center py-6 px-4 shadow-lg border-primary empty-groups-card">
-            <div class="mb-4 mx-auto empty-groups-icon-box">
-                👥
+        <div class="empty-dashboard-card text-center p-5 mb-4 fade-in">
+            <div class="empty-icon-box mb-4">
+                <span class="material-symbols-rounded">group</span>
             </div>
-            <h2 class="brand-font mb-3 empty-groups-title">No hay grupos creados</h2>
-            <p class="mx-auto mb-4 empty-groups-text">
-                Crea un grupo para empezar a dividir gastos con tus amigos y familiares.
+            <h2 class="brand-font mb-3">No hay círculos aún</h2>
+            <p class="empty-text mb-5">
+                Crea un grupo para empezar a dividir gastos con tus amigos y familiares de forma inteligente.
             </p>
-            <button class="editorial-button-primary d-inline-flex align-items-center justify-content-center gap-2" style="width: auto; padding: 0.8rem 2rem;" @onclick="NavigateToCreateGroup">
+            <button class="editorial-button-primary d-inline-flex align-items-center justify-content-center gap-2" style="width: auto; padding: 1rem 2.5rem;" @onclick="NavigateToCreateGroup">
                 <span>Crear mi primer grupo</span>
-                <span style="font-size: 1.2rem;">✨</span>
+                <span class="material-symbols-rounded">add_circle</span>
             </button>
         </div>
     }
     else
     {
-        <div class="d-flex flex-column gap-3">
+        <div class="groups-grid">
             @foreach (var group in groups)
             {
-                <div class="group-card d-flex align-items-center justify-content-between p-3" @onclick="() => ShowGroupDetails(group)">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="group-icon">
-                            @group.Name.Substring(0, 1).ToUpper()
+                <div class="group-card fade-in-up" @onclick="() => ShowGroupDetails(group)">
+                    <div class="group-card-content">
+                        <div class="group-icon-container">
+                            <span class="material-symbols-rounded">groups</span>
                         </div>
-                        <div>
-                            <h3 class="m-0 h5 fw-bold group-item-title">@group.Name</h3>
-                            <p class="m-0 small" style="color: var(--on-surface-variant); opacity: 0.9; font-weight: 500;">Ver balances y miembros</p>
+                        <div class="group-info">
+                            <h3 class="group-name">@group.Name</h3>
+                            <p class="group-subtext">Ver balances y deudas</p>
                         </div>
-                    </div>
-                    <div class="text-primary group-item-arrow">
-                        ➡️
+                        <div class="group-action">
+                            <span class="material-symbols-rounded">arrow_forward_ios</span>
+                        </div>
                     </div>
                 </div>
             }
@@ -79,122 +79,133 @@
 {
     <div class="details-overlay" @onclick="CloseDetails">
         <div class="details-panel shadow-lg" @onclick:stopPropagation="true">
-            <div class="d-flex justify-content-between align-items-center mb-4 p-4 border-bottom panel-header-container">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="group-icon panel-group-icon">
-                        @selectedGroup.Name.Substring(0, 1).ToUpper()
+            <div class="panel-header border-bottom">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="panel-icon-box">
+                            <span class="material-symbols-rounded">groups</span>
+                        </div>
+                        <div>
+                            <h2 class="brand-font m-0 h4">@selectedGroup.Name</h2>
+                            <p class="text-editorial-muted small m-0">Detalles del Círculo</p>
+                        </div>
                     </div>
-                    <h2 class="brand-font m-0 h4">@selectedGroup.Name</h2>
-                    <button class="btn btn-sm btn-outline-secondary rounded-pill p-1 ms-2 edit-group-btn" @onclick="NavigateToEditGroup" title="Editar Grupo">✏️</button>
+                    <div class="d-flex gap-2 align-items-center">
+                        <button class="icon-btn" @onclick="NavigateToEditGroup" title="Editar Grupo">
+                            <span class="material-symbols-rounded">edit</span>
+                        </button>
+                        <button class="icon-btn close-btn" @onclick="CloseDetails">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </div>
                 </div>
-                <button class="btn-close-custom" @onclick="CloseDetails">✕</button>
             </div>
 
-            <div class="p-4" style="overflow-y: auto; max-height: calc(85vh - 100px);">
+            <div class="panel-body p-4 custom-scroll">
                 @if (loadingDetails)
                 {
-                    <div class="skeleton mb-4" style="height: 120px; border-radius: 1.5rem;"></div>
-                    <div class="skeleton mb-4" style="height: 200px; border-radius: 1.5rem;"></div>
+                    <div class="skeleton mb-4" style="height: 140px; border-radius: 1.5rem;"></div>
+                    <div class="skeleton mb-4" style="height: 250px; border-radius: 1.5rem;"></div>
                 }
                 else if (breakdown != null)
                 {
                     <!-- Summary Card -->
-                    <div class="editorial-card mb-4 p-4 text-center shadow-sm summary-total-hero">
-                        <p class="editorial-label mb-1" style="font-size: 0.7rem;">Gasto Total del Círculo</p>
-                        <h2 class="brand-font display-6 m-0" style="color: var(--primary);">@breakdown.TotalGroupExpense.ToString("C0")</h2>
-                        <div class="mt-3 d-flex justify-content-center gap-2">
-                             <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 members-active-badge">
-                                @members?.Count miembros activos
-                             </span>
+                    <div class="summary-hero mb-5">
+                        <div class="summary-item">
+                            <p class="summary-label">Gasto Total</p>
+                            <h2 class="summary-value">@breakdown.TotalGroupExpense.ToString("C0")</h2>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-item">
+                            <p class="summary-label">Miembros</p>
+                            <h2 class="summary-value">@members?.Count</h2>
                         </div>
                     </div>
 
                     <!-- Analytics Section (Premium) -->
-                    <div class="mb-5">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                             <h4 class="brand-font m-0 h6 premium-analytics-title">Distribución de Gastos @(!isPremium ? "👑" : "")</h4>
+                    <div class="section-container mb-5">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                             <h5 class="section-title m-0">Análisis Visual @(!isPremium ? "👑" : "")</h5>
                              @if (isPremium)
                              {
-                                 <button class="btn btn-sm btn-outline-primary rounded-pill px-3" @onclick="HandleExport" disabled="@exporting" style="font-size: 0.75rem;">
+                                 <button class="btn btn-sm btn-outline-primary rounded-pill px-3" @onclick="HandleExport" disabled="@exporting">
                                      @if (exporting) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                     <span>Excel 📄</span>
+                                     <span class="material-symbols-rounded" style="font-size: 0.9rem; vertical-align: middle;">download</span>
+                                     <span>Excel</span>
                                  </button>
                              }
                         </div>
 
                         @if (!isPremium)
                         {
-                            <div class="p-4 rounded-4 text-center cursor-pointer premium-locked-card" @onclick='() => ShowPaywall("Analíticas Pro")'>
-                                <span style="font-size: 2rem;">📊</span>
-                                <p class="mt-2 mb-1 fw-bold">Desbloquea Estadísticas Visuales</p>
-                                <p class="text-editorial-muted small mb-0">Analiza en qué gasta el grupo con gráficos detallados.</p>
+                            <div class="premium-locked-box" @onclick='() => ShowPaywall("Analíticas Pro")'>
+                                <span class="material-symbols-rounded premium-icon">pie_chart</span>
+                                <p class="locked-title">Desbloquea Gráficos</p>
+                                <p class="locked-text">Analiza los gastos del grupo con visualizaciones detalladas.</p>
+                                <span class="unlock-link">Mejorar ahora</span>
                             </div>
                         }
                         else if (loadingSummary)
                         {
-                            <div class="text-center py-4">
-                                <div class="spinner-border spinner-border-sm text-primary"></div>
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary"></div>
                             </div>
                         }
                         else if (spendingSummary != null && spendingSummary.Categories.Any())
                         {
-                            <div class="row align-items-center">
-                                <div class="col-md-6 mb-4 mb-md-0">
-                                    <DonutChart Data="spendingSummary.Categories" Total="spendingSummary.TotalGroupSpending" Size="180" />
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="d-flex flex-column gap-2">
-                                        @foreach (var cat in spendingSummary.Categories.Take(5))
-                                        {
-                                            <div class="d-flex align-items-center justify-content-between small">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div style="width: 10px; height: 10px; border-radius: 50%; background: @cat.CategoryColor;"></div>
-                                                    <span class="text-editorial-muted">@cat.CategoryIcon @cat.CategoryName</span>
+                            <div class="analytics-card p-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6 mb-4 mb-md-0 text-center">
+                                        <DonutChart Data="spendingSummary.Categories" Total="spendingSummary.TotalGroupSpending" Size="160" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="category-legend">
+                                            @foreach (var cat in spendingSummary.Categories.Take(5))
+                                            {
+                                                <div class="legend-item">
+                                                    <div class="legend-color" style="background: @cat.CategoryColor;"></div>
+                                                    <span class="legend-name">@cat.CategoryName</span>
+                                                    <span class="legend-pct">@cat.Percentage.ToString("0")%</span>
                                                 </div>
-                                                <span class="fw-bold">@cat.Percentage.ToString("0")%</span>
-                                            </div>
-                                        }
+                                            }
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         }
-                        else
-                        {
-                            <p class="text-center text-editorial-muted small">No hay suficientes gastos para generar estadísticas.</p>
-                        }
                     </div>
 
-                    <!-- Breakdown List -->
-                    <div class="mb-5">
-                        <h5 class="section-label mb-3">DESGLOSE POR MIEMBRO</h5>
-                        <div class="d-flex flex-column gap-2">
+                    <!-- Balances Section -->
+                    <div class="section-container mb-5">
+                        <h5 class="section-title mb-4">Estado de Miembros</h5>
+                        <div class="member-list">
                             @foreach (var m in breakdown.Members)
                             {
-                                <div class="balance-item p-3 d-flex justify-content-between align-items-center" style="border-left: 4px solid @(m.NetBalance >= 0 ? "#10b981" : "#ef4444");">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="member-avatar" style="width: 36px; height: 36px; background: var(--surface-container-highest); color: var(--on-surface);">
+                                <div class="member-card @(m.NetBalance > 0 ? "positive" : m.NetBalance < 0 ? "negative" : "neutral")">
+                                    <div class="member-info">
+                                        <div class="member-avatar">
                                             @m.FullName.Substring(0, 1).ToUpper()
                                         </div>
-                                        <div>
-                                            <p class="m-0 fw-bold member-row-name">@m.FullName</p>
-                                            <p class="m-0 small text-editorial-muted">@m.TransactionCount transacciones</p>
+                                        <div class="member-text">
+                                            <p class="member-name">@m.FullName</p>
+                                            <p class="member-meta">@m.TransactionCount movimientos</p>
                                         </div>
                                     </div>
-                                    <div class="text-end">
+                                    <div class="member-balance">
                                         @if (m.NetBalance > 0)
                                         {
-                                            <p class="m-0 small text-success fw-bold text-uppercase net-balance-label">Le deben</p>
-                                            <p class="m-0 fw-bold text-success net-balance-value">+@m.NetBalance.ToString("C0")</p>
+                                            <span class="balance-tag positive">A RECIBIR</span>
+                                            <p class="balance-value positive">+@m.NetBalance.ToString("C0")</p>
                                         }
                                         else if (m.NetBalance < 0)
                                         {
-                                            <p class="m-0 small text-danger fw-bold text-uppercase net-balance-label">Debe</p>
-                                            <p class="m-0 fw-bold text-danger net-balance-value">@m.NetBalance.ToString("C0")</p>
+                                            <span class="balance-tag negative">DEBE</span>
+                                            <p class="balance-value negative">@m.NetBalance.ToString("C0")</p>
                                         }
                                         else
                                         {
-                                            <p class="m-0 small text-editorial-muted fw-bold text-uppercase net-balance-label">Al día</p>
-                                            <p class="m-0 fw-bold text-editorial-muted net-balance-value">$0</p>
+                                            <span class="balance-tag neutral">AL DÍA</span>
+                                            <p class="balance-value neutral">$0</p>
                                         }
                                     </div>
                                 </div>
@@ -202,39 +213,30 @@
                         </div>
                     </div>
 
-                    <!-- Balances Section (Debts between people) -->
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="section-label m-0">PLAN DE PAGOS (LIQUIDACIÓN)</h5>
-                            @if (balances != null && balances.Any())
-                            {
-                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.65rem;">Pendiente</span>
-                            }
-                        </div>
-                        
+                    <!-- Payment Plan -->
+                    <div class="section-container mb-4">
+                        <h5 class="section-title mb-4">Plan de Liquidación</h5>
                         @if (balances == null || !balances.Any())
                         {
-                            <div class="text-center py-5 px-3 rounded-4 saldado-card">
-                                <span style="font-size: 2.5rem;">🎉</span>
-                                <p class="mt-3 mb-1 fw-bold h5 brand-font">¡Todo saldado!</p>
-                                <p class="small text-editorial-muted mb-0">Nadie le debe a nadie en este círculo.</p>
+                            <div class="settled-box p-5">
+                                <span class="material-symbols-rounded settled-icon">verified</span>
+                                <h4 class="brand-font m-0 mt-3">¡Círculo en Paz!</h4>
+                                <p class="text-editorial-muted small m-0 mt-1">Todas las deudas están saldadas.</p>
                             </div>
                         }
                         else
                         {
-                            <div class="balances-list">
+                            <div class="payment-list">
                                 @foreach (var balance in balances)
                                 {
-                                    <div class="balance-item p-3 mb-2" style="background: rgba(var(--primary-rgb), 0.03);">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div class="debt-item-info">
-                                                <span class="fw-bold text-danger">@balance.DebtorName</span>
-                                                <span class="mx-1" style="opacity: 0.6;">paga a</span>
-                                                <span class="fw-bold text-success">@balance.CreditorName</span>
-                                            </div>
-                                            <div class="amount-badge bg-primary text-white border-0">
-                                                @balance.Amount.ToString("C0")
-                                            </div>
+                                    <div class="payment-card">
+                                        <div class="payment-flow">
+                                            <span class="payer">@balance.DebtorName</span>
+                                            <span class="material-symbols-rounded arrow">trending_flat</span>
+                                            <span class="payee">@balance.CreditorName</span>
+                                        </div>
+                                        <div class="payment-amount">
+                                            @balance.Amount.ToString("C0")
                                         </div>
                                     </div>
                                 }
@@ -244,12 +246,14 @@
                 }
             </div>
             
-            <div class="p-4 border-top" style="border-color: var(--outline-variant) !important; background: var(--surface-container-lowest); display: flex; flex-direction: column; gap: 0.75rem;">
-                <button class="editorial-button-primary w-100" @onclick="NavigateToNewExpense" style="border-radius: 1rem; padding: 1rem;">
-                    Cargar Gasto en este Grupo 🚀
+            <div class="panel-footer p-4 border-top">
+                <button class="btn-primary-modern mb-3" @onclick="NavigateToNewExpense">
+                    <span>Cargar Gasto</span>
+                    <span class="material-symbols-rounded">add_circle</span>
                 </button>
-                <button class="btn btn-link text-danger text-decoration-none small fw-bold" @onclick="ConfirmDeleteGroup">
-                    🗑️ Eliminar este grupo permanentemente
+                <button class="btn-text-danger" @onclick="ConfirmDeleteGroup">
+                    <span class="material-symbols-rounded">delete</span>
+                    Eliminar Círculo
                 </button>
             </div>
         </div>
@@ -258,7 +262,7 @@
 
 <!-- Floating Action Button -->
 <button class="fab-button shadow-lg" @onclick="NavigateToCreateGroup" title="Nuevo Grupo">
-    <span style="font-size: 2rem; line-height: 1;">+</span>
+    <span class="material-symbols-rounded">add</span>
 </button>
 
 @code {
@@ -279,8 +283,6 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        
-        // Cargar estado premium real o simulado
         var isRealPremium = authState.User.IsInRole("PremiumUser");
         var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
         isPremium = isRealPremium || isSimulatedPremium;
@@ -302,7 +304,6 @@
         loadingDetails = true;
         loadingSummary = true;
         spendingSummary = null;
-
         StateHasChanged();
         
         try 
@@ -323,8 +324,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading group details: {ex.Message}");
-            ModalService.ShowModal("Error de Sincronización", "No se pudieron obtener los detalles de este círculo en este momento.", ModalType.Error);
+            ModalService.ShowModal("Error", "No se pudieron obtener los detalles.", ModalType.Error);
         }
         finally
         {
@@ -337,7 +337,6 @@
     private async Task HandleExport()
     {
         if (selectedGroup == null) return;
-        
         exporting = true;
         try
         {
@@ -346,11 +345,7 @@
             {
                 var fileName = $"Reporte_{selectedGroup.Name}_{DateTime.Now:yyyyMMdd}.xlsx";
                 await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Convert.ToBase64String(data));
-                ModalService.ShowModal("Exportación Exitosa", $"El reporte '{fileName}' fue generado y descargado correctamente.", ModalType.Success);
-            }
-            else
-            {
-                ModalService.ShowModal("Error de Exportación", "No pudimos generar el reporte excel para este círculo.", ModalType.Error);
+                ToastService.ShowToast("Reporte descargado 📄", ToastLevel.Success);
             }
         }
         finally
@@ -365,26 +360,14 @@
         showPaywall = true;
     }
 
-    private void HandleUpgrade()
-    {
-        Navigation.NavigateTo("/premium");
-    }
+    private void HandleUpgrade() => Navigation.NavigateTo("/premium");
 
     private async Task HandleSimulatePremium() 
     {
         isPremium = true;
         await LocalStorage.SetItemAsync("is_simulated_premium", true);
-        ModalService.ShowModal("Simulación Activa", "Modo premium habilitado en este entorno de desarrollo.", ModalType.Warning);
-        
-        // Si hay un grupo seleccionado, recargar sus detalles para traer el summary premium
-        if (selectedGroup != null)
-        {
-            await ShowGroupDetails(selectedGroup);
-        }
-        else
-        {
-            StateHasChanged();
-        }
+        if (selectedGroup != null) await ShowGroupDetails(selectedGroup);
+        else StateHasChanged();
     }
 
     private void CloseDetails()
@@ -407,42 +390,26 @@
     
     private void NavigateToNewExpense()
     {
-        if (selectedGroup != null)
-        {
-            Navigation.NavigateTo($"/expenses/new?groupId={selectedGroup.Id}");
-        }
+        if (selectedGroup != null) Navigation.NavigateTo($"/expenses/new?groupId={selectedGroup.Id}");
     }
 
     private void NavigateToEditGroup()
     {
-        if (selectedGroup != null)
-        {
-            Navigation.NavigateTo($"/groups/edit/{selectedGroup.Id}");
-        }
+        if (selectedGroup != null) Navigation.NavigateTo($"/groups/edit/{selectedGroup.Id}");
     }
 
     private async Task ConfirmDeleteGroup()
     {
         if (selectedGroup == null) return;
-
-        bool confirmed = await ModalService.ShowConfirmAsync(
-            "Eliminar Grupo",
-            $"¿Estás seguro de que deseas eliminar el grupo '{selectedGroup.Name}'? Esta acción borrará todos los gastos y miembros asociados de forma permanente.",
-            ModalType.Warning
-        );
-
+        bool confirmed = await ModalService.ShowConfirmAsync("Eliminar Grupo", $"¿Borrar '{selectedGroup.Name}'? Esta acción es irreversible.", ModalType.Warning);
         if (confirmed)
         {
             var success = await ExpenseService.DeleteGroupAsync(Guid.Parse(selectedGroup.Id));
             if (success)
             {
-                ModalService.ShowModal("¡Grupo Eliminado!", "El círculo ha sido borrado con éxito.", ModalType.Success);
+                ToastService.ShowToast("Grupo eliminado 🗑️", ToastLevel.Success);
                 CloseDetails();
                 await LoadGroups();
-            }
-            else
-            {
-                ModalService.ShowModal("Error", "No se pudo eliminar el grupo. Verifica tu conexión.", ModalType.Error);
             }
         }
     }
