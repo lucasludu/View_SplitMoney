@@ -1,82 +1,49 @@
-# ANÁLISIS ARQUITECTÓNICO: SPLITMONEY (MAUI BLAZOR)
+# Análisis del Proyecto y Sugerencias de Mejoras
+## Deuda Técnica e Identificación de Problemas
+El proyecto presenta errores de conexión a la red en varios archivos, lo que indica una falla en la configuración o implementación de la conexión a la API. Es necesario revisar y solucionar los siguientes problemas:
 
-## 1. Deuda Técnica e Identificación de Problemas
+* Error en la generación local (Ollama) en varios archivos, incluyendo `Models\AuthModels.cs`, `Models\ViewModels\DashboardViewModels.cs`, `Services\AuthService.cs`, entre otros.
+* El equipo remoto rechazó la conexión de red, lo que sugiere un problema con la configuración de la conexión a la API.
 
-| Área | Problema Detectado | Impacto |
-| :--- | :--- | :--- |
-| **Responsabilidad Única** | `ExpenseService` centraliza lógica de Grupos, Gastos y Dashboard. | Baja mantenibilidad y acoplamiento alto. |
-| **Lógica en ViewModels** | `ExpenseDetailViewModel` contiene lógica de partición de pagos. | Dificulta las pruebas unitarias y reutilización. |
-| **Gestión de Estado** | Ausencia de un Store centralizado; dependencia de llamadas API constantes. | Latencia en la UI y consumo excesivo de datos. |
-| **Persistencia Local** | No se observa integración con SQLite o Akavache para modo offline. | La aplicación queda inútil sin conectividad. |
-| **Manejo de Errores** | Lógica de reintentos y errores dispersa en Handlers y Services. | Comportamiento inconsistente ante fallos de red. |
+## Nuevas Funcionalidades
+Se podrían agregar las siguientes funcionalidades para mejorar el proyecto:
 
-### Flujo de Autenticación y API
+* Implementar un sistema de caché para reducir la cantidad de solicitudes a la API y mejorar el rendimiento.
+* Agregar una capa de seguridad adicional para proteger la información de los usuarios y la conexión a la API.
+* Desarrollar una interfaz de usuario más intuitiva y amigable para los usuarios.
+
+## Cumplimiento de Buenas Prácticas
+Es necesario revisar y modificar los siguientes componentes para cumplir con buenas prácticas de programación:
+
+| Componente | Acción |
+| --- | --- |
+| Conexión a la API | Revisar y solucionar los errores de conexión |
+| Código de autenticación | Implementar un sistema de autenticación más seguro |
+| Manejo de errores | Agregar un sistema de manejo de errores para mejorar la estabilidad del proyecto |
+
+## Refactorización
+Se podrían eliminar o simplificar las siguientes partes del código:
+
+* Código duplicado en varios archivos, como la implementación de la conexión a la API.
+* Metodos o funciones que no se utilizan o que pueden ser reemplazados por una implementación más eficiente.
+
+# MERMAID: Arquitectura del Proyecto
 ```mermaid
-graph TD
-    A["Usuario (UI)"] -->|Solicitud| B["AuthService"]
-    B -->|Usa| C["AuthenticationHeaderHandler"]
-    C -->|Intercepta| D["RefreshTokenHandler"]
-    D -->|Valida Token| E["SecureStorage"]
-    E -->|Expirado| F["API /refresh"]
-    F -->|Nuevo Token| E
+graph LR
+    A[Inicio] -->|Inicialización|> B[Autenticación]
+    B -->|Conexión a la API|> C[Servicios]
+    C -->|Lógica de negocio|> D[Base de datos]
+    D -->|Almacenamiento de datos|> E[Respuesta]
+    E -->|Resultado|> A
 ```
-
-## 2. Nuevas Funcionalidades Sugeridas
-
-1.  **Sincronización Offline**: Implementar una base de datos local (SQLite) para permitir la creación de gastos sin conexión y sincronización posterior.
-2.  **Escaneo de Recibos (OCR)**: Integración con Azure AI Document Intelligence para extraer datos de tickets automáticamente.
-3.  **Sistema de Notificaciones Push**: Implementar Firebase Cloud Messaging (FCM) para alertas de deudas pendientes o nuevos gastos en grupos.
-4.  **Soporte Multimoneda**: Integración con un servicio de tipos de cambio para grupos internacionales.
-5.  **Exportación de Reportes**: Generación de PDF/Excel de los balances del grupo.
-
-## 3. Cumplimiento de Buenas Prácticas
-
-### Componentes a Modificar
-*   **Services**: Dividir `IExpenseService` en `IGroupService`, `IExpenseService` y `IDashboardService`.
-*   **Infrastructure**: Renombrar a `Networking` y separar los `DelegatingHandler` por responsabilidad (Auth, Logging, Connectivity).
-*   **ViewModels**: Eliminar cálculos complejos. Los ViewModels deben ser puramente para *Data Binding*. La lógica de negocio debe residir en `Domain Services` o `Use Cases`.
-*   **UI Components**: El componente `DonutChart.razor` debería recibir los datos procesados en lugar de calcular porcentajes internamente.
-
-## 4. Refactorización
-
-### Eliminación y Simplificación
-*   **Simplificación de `CreateGroupAsync`**: Actualmente realiza múltiples llamadas atómicas. Debe refactorizarse para usar una sola transacción en el Backend o un patrón de "Unidad de Trabajo" en el Cliente.
-*   **Consolidación de Handlers**: `DevelopmentHttpClientHandler` puede ser reemplazado por configuración condicional en `MauiProgram.cs` mediante `#if DEBUG`.
-*   **Abstracción de Storage**: Crear un `IStorageService` que envuelva `SecureStorage` para facilitar el Mocking en tests.
-
-### Rediseño de Servicios (Propuesto)
-```mermaid
-classDiagram
-    class IExpenseService {
-        +GetExpenseDetails(id)
-        +CreateExpense(model)
-    }
-    class IGroupService {
-        +GetGroups()
-        +CreateGroup(model)
-        +AddMember(groupId, userId)
-    }
-    class IDashboardService {
-        +GetStats()
-        +GetRecentActivity()
-    }
-    IExpenseService <|-- ExpenseService
-    IGroupService <|-- GroupService
-    IDashboardService <|-- DashboardService
-```
-
-## 5. 🚀 PROMPT DE APLICACIÓN
-
-Copia y pega el siguiente bloque en tu IA de preferencia para ejecutar las mejoras:
-
-```text
-Actúa como un Desarrollador Senior .NET/MAUI. Realiza las siguientes refactorizaciones sobre el proyecto SplitMoney:
-
-1. SEGREGACIÓN DE INTERFACES: Divide 'IExpenseService' en tres interfaces: 'IExpenseService', 'IGroupService' y 'IDashboardService'. Distribuye los métodos actuales de 'ExpenseService.cs' según su dominio.
-2. OPTIMIZACIÓN DE INFRAESTRUCTURA: En 'MauiProgram.cs', implementa una política de reintentos usando Polly para los HttpClient. Centraliza la configuración de 'DevelopmentHttpClientHandler' usando directivas de compilación #if DEBUG.
-3. REFACTORIZACIÓN DE VIEWMODELS: Extrae cualquier lógica de cálculo de saldos o partición de 'ExpenseDetailViewModel' hacia una nueva clase estática de utilidad llamada 'FinanceCalculator'.
-4. PATRÓN REPOSITORY: Crea una estructura básica para 'ISqliteRepository' y su implementación con SQLite-net-pcl para cachear los datos de 'Groups.razor'.
-5. MEJORA DE TOASTS: Modifica 'ToastService.cs' para que acepte eventos en lugar de usar un Timer directo en la clase, permitiendo que múltiples componentes se suscriban a las notificaciones.
-
-Proporciona el código limpio, siguiendo principios SOLID y usando C# 12.
+# PROMPT DE APLICACIÓN
+Para aplicar las mejoras sugeridas, puede copiar y pegar el siguiente código en una IA como ChatGPT:
+```markdown
+### Análisis y Mejoras del Proyecto
+1. Revisar y solucionar los errores de conexión a la API en los archivos `Models\AuthModels.cs`, `Models\ViewModels\DashboardViewModels.cs`, `Services\AuthService.cs`, entre otros.
+2. Implementar un sistema de caché para reducir la cantidad de solicitudes a la API y mejorar el rendimiento.
+3. Agregar una capa de seguridad adicional para proteger la información de los usuarios y la conexión a la API.
+4. Desarrollar una interfaz de usuario más intuitiva y amigable para los usuarios.
+5. Revisar y modificar los componentes para cumplir con buenas prácticas de programación, como la conexión a la API y el manejo de errores.
+6. Eliminar o simplificar las partes del código que no se utilizan o que pueden ser reemplazadas por una implementación más eficiente.
 ```

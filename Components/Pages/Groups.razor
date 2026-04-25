@@ -425,7 +425,11 @@
     {
         if (selectedGroup == null) return;
 
-        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"¿Estás seguro de que deseas eliminar el grupo '{selectedGroup.Name}'? Esta acción borrará todos los gastos y miembros asociados de forma permanente.");
+        bool confirmed = await ModalService.ShowConfirmAsync(
+            "Eliminar Grupo",
+            $"¿Estás seguro de que deseas eliminar el grupo '{selectedGroup.Name}'? Esta acción borrará todos los gastos y miembros asociados de forma permanente.",
+            ModalType.Warning
+        );
 
         if (confirmed)
         {

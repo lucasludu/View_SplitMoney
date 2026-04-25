@@ -17,9 +17,23 @@
                 <p class="m-0" style="color: var(--on-surface-variant);">@ModalService.Message</p>
             </div>
 
-            <button class="@GetButtonClass() w-100 py-2 rounded-pill" @onclick="CloseModal" style="font-weight: 600;">
-                Aceptar
-            </button>
+            @if (ModalService.IsConfirmation)
+            {
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary w-50 py-2 rounded-pill" @onclick="() => ModalService.Confirm(false)" style="font-weight: 600;">
+                        Cancelar
+                    </button>
+                    <button class="@GetButtonClass() w-50 py-2 rounded-pill" @onclick="() => ModalService.Confirm(true)" style="font-weight: 600;">
+                        Aceptar
+                    </button>
+                </div>
+            }
+            else
+            {
+                <button class="@GetButtonClass() w-100 py-2 rounded-pill" @onclick="CloseModal" style="font-weight: 600;">
+                    Aceptar
+                </button>
+            }
         </div>
     </div>
 }
