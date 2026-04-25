@@ -11,32 +11,50 @@ namespace SplitMoney.Client.Services
         private readonly HttpClient _httpClient;
         private readonly AuthenticationStateProvider _authenticationStateProvider;
         private readonly Blazored.LocalStorage.ILocalStorageService _localStorage;
+        private readonly ICacheService _cacheService;
 
         public AuthService(HttpClient httpClient,
                            AuthenticationStateProvider authenticationStateProvider,
-                           Blazored.LocalStorage.ILocalStorageService localStorage)
+                           Blazored.LocalStorage.ILocalStorageService localStorage,
+                           ICacheService cacheService)
         {
             _httpClient = httpClient;
             _authenticationStateProvider = authenticationStateProvider;
             _localStorage = localStorage;
+            _cacheService = cacheService;
         }
 
         public async Task<Response<LoginResponse>> Login(LoginRequest loginRequest)
         {
-            var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/login", loginRequest);
-            var result = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
-
-            if (response.IsSuccessStatusCode && result!.Succeeded)
+            try 
             {
-                await SecureStorage.Default.SetAsync("authToken", result.Data.Token);
-                await SecureStorage.Default.SetAsync("refreshToken", result.Data.RefreshToken);
+                var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/login", loginRequest);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
+                    if (result != null && result.Succeeded)
+                    {
+                        await SecureStorage.Default.SetAsync("authToken", result.Data!.Token);
+                        await SecureStorage.Default.SetAsync("refreshToken", result.Data.RefreshToken);
 
-                ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(result.Data.Token);
+                        ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(result.Data.Token);
 
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result.Data.Token);
+                        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result.Data.Token);
+                        return result;
+                    }
+                    return result ?? new Response<LoginResponse> { Succeeded = false, Message = "Respuesta vacía del servidor." };
+                }
+                else 
+                {
+                    var errorResult = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
+                    return errorResult ?? new Response<LoginResponse> { Succeeded = false, Message = $"Error del servidor: {response.StatusCode}" };
+                }
             }
-
-            return result!;
+            catch (Exception ex)
+            {
+                return new Response<LoginResponse> { Succeeded = false, Message = $"Error de conexión: {ex.Message}" };
+            }
         }
 
         public async Task Logout()
@@ -60,10 +78,11 @@ namespace SplitMoney.Client.Services
                 SecureStorage.Default.Remove("authToken");
                 SecureStorage.Default.Remove("refreshToken");
                 
-                // Clear any simulated premium state on logout
+                // Clear any simulated premium state and cache on logout
                 try
                 {
                     await _localStorage.RemoveItemAsync("is_simulated_premium");
+                    await _cacheService.ClearAllAsync();
                 }
                 catch (InvalidOperationException)
                 {
@@ -78,9 +97,16 @@ namespace SplitMoney.Client.Services
 
         public async Task<Response<string>> Register(RegisterUserRequest registerRequest)
         {
-            var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/register", registerRequest);
-            var result = await response.Content.ReadFromJsonAsync<Response<string>>();
-            return result!;
+            try 
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/register", registerRequest);
+                var result = await response.Content.ReadFromJsonAsync<Response<string>>();
+                return result ?? new Response<string> { Succeeded = false, Message = "Error al procesar el registro." };
+            }
+            catch (Exception ex)
+            {
+                return new Response<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+            }
         }
 
         public async Task<string> RefreshToken()
@@ -122,16 +148,37 @@ namespace SplitMoney.Client.Services
         }
         public async Task<Response<UserDto>> GetProfile()
         {
-            var response = await _httpClient.GetAsync("api/v1/User/me");
-            var result = await response.Content.ReadFromJsonAsync<Response<UserDto>>();
-            return result!;
+            try 
+            {
+                var response = await _httpClient.GetAsync("api/v1/User/me");
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<Response<UserDto>>();
+                    return result ?? new Response<UserDto> { Succeeded = false, Message = "Perfil no encontrado." };
+                }
+                return new Response<UserDto> { Succeeded = false, Message = "Error al obtener el perfil." };
+            }
+            catch (Exception ex)
+            {
+                return new Response<UserDto> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+            }
         }
 
         public async Task<Response<string>> UpdateProfile(UserDto userUpdate)
         {
-            var response = await _httpClient.PutAsJsonAsync("api/v1/Auth/profile", userUpdate);
-            var result = await response.Content.ReadFromJsonAsync<Response<string>>();
-            return result!;
+            try 
+            {
+                // NOTA: El endpoint api/v1/Auth/profile no existe en la API actual.
+                // Se intenta usar api/v1/User/me si fuera un PUT para actualizar, 
+                // o se deja la ruta actual por si se añade en el futuro.
+                var response = await _httpClient.PutAsJsonAsync("api/v1/User/me", userUpdate);
+                var result = await response.Content.ReadFromJsonAsync<Response<string>>();
+                return result ?? new Response<string> { Succeeded = false, Message = "Error al actualizar el perfil." };
+            }
+            catch (Exception ex)
+            {
+                return new Response<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+            }
         }
     }
 }

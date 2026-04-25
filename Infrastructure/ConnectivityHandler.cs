@@ -17,57 +17,33 @@ namespace SplitMoney.Client.Infrastructure
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            // Avoid handling if the request is for authentication (login, register, logout)
-            if (request.RequestUri!.AbsolutePath.Contains("/api/v1/Auth/"))
-            {
-                return await base.SendAsync(request, cancellationToken);
-            }
-            
             try
             {
-            var response = await base.SendAsync(request, cancellationToken);
-            
-            if (((int)response.StatusCode >= 500 || response.StatusCode == HttpStatusCode.ServiceUnavailable) 
-                && !request.RequestUri!.AbsolutePath.Contains("/api/v1/Auth/"))
-            {
-                var authStateProvider = _serviceProvider.GetRequiredService<AuthenticationStateProvider>();
-                var authState = await authStateProvider.GetAuthenticationStateAsync();
+                var response = await base.SendAsync(request, cancellationToken);
                 
-                if (authState.User.Identity?.IsAuthenticated == true)
+                // Si el servidor responde con un error 500+ pero NO es un error de autorización (que maneja el RefreshTokenHandler)
+                if (((int)response.StatusCode >= 500 || response.StatusCode == HttpStatusCode.ServiceUnavailable))
                 {
-                    var authService = _serviceProvider.GetRequiredService<IAuthService>();
-                    var toastService = _serviceProvider.GetRequiredService<IToastService>();
-                    var navigationManager = _serviceProvider.GetRequiredService<NavigationManager>();
-
-                    toastService.ShowToast("No hay respuesta del servidor principal.", ToastLevel.Error);
-                    await authService.Logout();
-                    navigationManager.NavigateTo("server-error");
+                    var toastService = _serviceProvider.GetService<IToastService>();
+                    toastService?.ShowToast("El servidor encontró un error interno. Intente nuevamente más tarde.", ToastLevel.Error);
+                    
+                    // No cerramos sesión automáticamente en errores 500 para evitar expulsar al usuario por un bug puntual
                 }
-            }
 
-            return response;
-        }
-        catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException || ex is SocketException)
-        {
-            if (ex is TaskCanceledException && cancellationToken.IsCancellationRequested)
+                return response;
+            }
+            catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException || ex is SocketException)
             {
-                throw;
-            }
+                if (ex is TaskCanceledException && cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
 
-            // Get current AuthState to see if we should actually Logout
-            var authStateProvider = _serviceProvider.GetRequiredService<AuthenticationStateProvider>();
-            var authState = await authStateProvider.GetAuthenticationStateAsync();
-            
-            if (authState.User.Identity?.IsAuthenticated == true)
-            {
-                var authService = _serviceProvider.GetRequiredService<IAuthService>();
-                var toastService = _serviceProvider.GetRequiredService<IToastService>();
-                var navigationManager = _serviceProvider.GetRequiredService<NavigationManager>();
-
-                toastService.ShowToast("Se perdió la conexión con el servidor.", ToastLevel.Error);
-                await authService.Logout();
-                navigationManager.NavigateTo("server-error");
-            }
+                var toastService = _serviceProvider.GetService<IToastService>();
+                toastService?.ShowToast("No se pudo establecer conexión con el servidor. Verifique su internet.", ToastLevel.Error);
+                
+                // Solo redirigimos a error si el usuario ya estaba autenticado y es un error crítico de conexión
+                // pero NO cerramos sesión automáticamente.
                 
                 throw;
             }

@@ -40,6 +40,8 @@ public static class MauiProgram
 			builder.Services.AddScoped<IModalService, ModalService>();
 			builder.Services.AddScoped<ITipService, TipService>();
 			builder.Services.AddScoped<INotificationService, NotificationService>();
+			builder.Services.AddScoped<ICacheService, CacheService>();
+			builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
 
 			// HTTP Handlers registration
 			builder.Services.AddTransient<AuthenticationHeaderHandler>();

@@ -8,20 +8,33 @@ public class ExpenseService : IExpenseService
 {
     private readonly HttpClient _httpClient;
     private readonly IToastService _toastService;
+    private readonly ICacheService _cacheService;
 
-    public ExpenseService(HttpClient httpClient, IToastService toastService)
+    private const string DASHBOARD_KEY = "dashboard_data";
+    private const string GROUPS_KEY = "user_groups_data";
+    private const string CATEGORIES_KEY = "expense_categories_data";
+
+    public ExpenseService(HttpClient httpClient, IToastService toastService, ICacheService cacheService)
     {
         _httpClient = httpClient;
         _toastService = toastService;
+        _cacheService = cacheService;
     }
 
     public async Task<DashboardViewModel?> GetDashboardAsync()
     {
+        var cached = await _cacheService.GetAsync<DashboardViewModel>(DASHBOARD_KEY);
+        if (cached != null) return cached;
+
         var response = await _httpClient.GetAsync("api/v1/expenses/dashboard");
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadFromJsonAsync<Response<DashboardViewModel>>();
-            return result?.Data;
+            if (result?.Data != null)
+            {
+                await _cacheService.SetAsync(DASHBOARD_KEY, result.Data, TimeSpan.FromMinutes(2));
+                return result.Data;
+            }
         }
         
         return null;
@@ -31,12 +44,20 @@ public class ExpenseService : IExpenseService
     {
         try
         {
+            var cached = await _cacheService.GetAsync<List<GroupSummaryViewModel>>(GROUPS_KEY);
+            if (cached != null) return cached;
+
             var response = await _httpClient.GetAsync("api/v1/groups");
             
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<Response<List<GroupSummaryViewModel>>>();
-                return result?.Data ?? new List<GroupSummaryViewModel>();
+                var data = result?.Data ?? new List<GroupSummaryViewModel>();
+                if (data.Any())
+                {
+                    await _cacheService.SetAsync(GROUPS_KEY, data, TimeSpan.FromMinutes(5));
+                }
+                return data;
             }
             
             return new List<GroupSummaryViewModel>();
@@ -62,6 +83,12 @@ public class ExpenseService : IExpenseService
         };
 
         var response = await _httpClient.PostAsJsonAsync("api/v1/expenses", request);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            await InvalidateMainCache();
+        }
+        
         return response.IsSuccessStatusCode;
     }
 
@@ -73,6 +100,7 @@ public class ExpenseService : IExpenseService
             InitialMembers = initialMembers.Select(m => new { Email = m.Email, AmountSpent = m.AmountSpent }).ToList() 
         };
         var response = await _httpClient.PostAsJsonAsync("api/v1/groups", request);
+        if (response.IsSuccessStatusCode) await InvalidateMainCache();
         return response.IsSuccessStatusCode;
     }
 
@@ -171,12 +199,14 @@ public class ExpenseService : IExpenseService
         };
 
         var response = await _httpClient.PutAsJsonAsync($"api/v1/expenses/{id}", request);
+        if (response.IsSuccessStatusCode) await InvalidateMainCache();
         return response.IsSuccessStatusCode;
     }
 
     public async Task<bool> DeleteExpenseAsync(Guid id)
     {
         var response = await _httpClient.DeleteAsync($"api/v1/expenses/{id}");
+        if (response.IsSuccessStatusCode) await InvalidateMainCache();
         return response.IsSuccessStatusCode;
     }
 
@@ -184,11 +214,19 @@ public class ExpenseService : IExpenseService
     {
         try
         {
+            var cached = await _cacheService.GetAsync<List<CategoryDto>>(CATEGORIES_KEY);
+            if (cached != null) return cached;
+
             var response = await _httpClient.GetAsync("api/v1/categories");
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<Response<List<CategoryDto>>>();
-                return result?.Data ?? new List<CategoryDto>();
+                var data = result?.Data ?? new List<CategoryDto>();
+                if (data.Any())
+                {
+                    await _cacheService.SetAsync(CATEGORIES_KEY, data, TimeSpan.FromHours(24), persist: true);
+                }
+                return data;
             }
             return new List<CategoryDto>();
         }
@@ -196,6 +234,12 @@ public class ExpenseService : IExpenseService
         {
             return new List<CategoryDto>();
         }
+    }
+
+    private async Task InvalidateMainCache()
+    {
+        await _cacheService.RemoveAsync(DASHBOARD_KEY);
+        await _cacheService.RemoveAsync(GROUPS_KEY);
     }
 
     public async Task<ExpenseAuditViewModel?> GetExpenseAuditAsync(Guid expenseId)
@@ -251,6 +295,7 @@ public class ExpenseService : IExpenseService
             Members = members.Select(m => new { Email = m.Email }).ToList()
         };
         var response = await _httpClient.PutAsJsonAsync($"api/v1/groups/{id}", request);
+        if (response.IsSuccessStatusCode) await InvalidateMainCache();
         return response.IsSuccessStatusCode;
     }
 
@@ -259,6 +304,7 @@ public class ExpenseService : IExpenseService
         try
         {
             var response = await _httpClient.DeleteAsync($"api/v1/groups/{id}");
+            if (response.IsSuccessStatusCode) await InvalidateMainCache();
             return response.IsSuccessStatusCode;
         }
         catch
