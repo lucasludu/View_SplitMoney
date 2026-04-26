@@ -27,7 +27,7 @@ namespace SplitMoney.Client.Services
         public ModalType Type { get; private set; }
         public bool IsConfirmation { get; private set; }
 
-        private TaskCompletionSource<bool> _tcs;
+        private TaskCompletionSource<bool>? _tcs;
 
         public void ShowModal(string title, string message, ModalType type)
         {

@@ -3,12 +3,13 @@
 @using SplitMoney.Client.Services
 @using SplitMoney.Client.Models.ViewModels
 @using System.Security.Claims
+@using System.ComponentModel.DataAnnotations
 @attribute [Authorize]
 @inject NavigationManager Navigation
 @inject IExpenseService ExpenseService
 @inject IToastService ToastService
 @inject IModalService ModalService
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <div class="create-group-wrapper">
@@ -26,18 +27,21 @@
         </div>
 
         <div class="premium-card fade-in-up">
-            <form @onsubmit="HandleSubmit">
+            <EditForm Model="formModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
                 <!-- Group Identity Section -->
                 <div class="section-box mb-4">
-                    <div class="input-group-modern mb-4">
+                    <div class="input-group-modern mb-1">
                         <span class="material-symbols-rounded input-icon">label</span>
-                        <input type="text" class="modern-input group-name-field" placeholder="Nombre del grupo (ej: Viaje, Casa...)" @bind="groupName" required />
+                        <input type="text" class="modern-input group-name-field" placeholder="Nombre del grupo (ej: Viaje, Casa...)" @bind="formModel.GroupName" />
                     </div>
+                    <ValidationMessage For="@(() => formModel.GroupName)" />
 
-                    <div class="input-group-modern">
+                    <div class="input-group-modern mt-4 mb-1">
                         <span class="material-symbols-rounded input-icon">description</span>
-                        <input type="text" class="modern-input" placeholder="Descripción corta (opcional)" @bind="description" />
+                        <input type="text" class="modern-input" placeholder="Descripción corta (opcional)" @bind="formModel.Description" />
                     </div>
+                    <ValidationMessage For="@(() => formModel.Description)" />
                 </div>
 
                 <!-- Members Section -->
@@ -63,7 +67,7 @@
                             <div class="member-row fade-in">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="member-avatar">
-                                        @m.Email.Substring(0, 1).ToUpper()
+                                        <UserAvatar Name="@m.Email" />
                                     </div>
                                     <div class="member-info">
                                         <span class="member-email">@m.Email</span>
@@ -98,14 +102,23 @@
                     </button>
                     <p class="footer-hint mt-3">Al crear el grupo, se enviará una notificación a los invitados.</p>
                 </div>
-            </form>
+            </EditForm>
         </div>
     </div>
 </div>
 
 @code {
-    private string groupName = string.Empty;
-    private string description = string.Empty;
+    public class CreateGroupFormModel
+    {
+        [Required(ErrorMessage = "El nombre del grupo es obligatorio.")]
+        [StringLength(50, ErrorMessage = "El nombre no puede tener más de 50 caracteres.")]
+        public string GroupName { get; set; } = string.Empty;
+
+        [StringLength(100, ErrorMessage = "La descripción no puede tener más de 100 caracteres.")]
+        public string Description { get; set; } = string.Empty;
+    }
+    
+    private CreateGroupFormModel formModel = new();
     private string newMemberEmail = string.Empty;
     private string userEmail = string.Empty;
     private List<MemberSpendRecordViewModel> members = new();
@@ -117,21 +130,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        isPremium = await AuthService.IsPremiumAsync();
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var isRealPremium = authState.User.IsInRole("PremiumUser");
-        var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
-        isPremium = isRealPremium || isSimulatedPremium;
 
         userEmail = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "";
         
         if (GroupId.HasValue)
         {
-            var userGroups = await ExpenseService.GetUserGroupsAsync();
+            var groupsResult = await ExpenseService.GetUserGroupsAsync();
+            var userGroups = groupsResult.Succeeded && groupsResult.Data != null ? groupsResult.Data : new List<GroupSummaryViewModel>();
             var group = userGroups.FirstOrDefault(g => g.Id == GroupId.Value.ToString());
             if (group != null)
             {
-                groupName = group.Name;
-                var currentMembers = await ExpenseService.GetGroupMembersAsync(group.Id);
+                formModel.GroupName = group.Name;
+                var currentMembersResult = await ExpenseService.GetGroupMembersAsync(group.Id);
+                var currentMembers = currentMembersResult.Succeeded && currentMembersResult.Data != null ? currentMembersResult.Data : new List<GroupMemberResponse>();
                 members = currentMembers.Select(m => new MemberSpendRecordViewModel { 
                     Email = m.Email,
                     AmountSpent = 0 
@@ -165,24 +178,21 @@
 
     private async Task HandleSubmit()
     {
-        if (string.IsNullOrWhiteSpace(groupName)) return;
-
         submitting = true;
-        bool success;
-
-        if (GroupId.HasValue) success = await ExpenseService.UpdateGroupAsync(GroupId.Value, groupName, members);
-        else success = await ExpenseService.CreateGroupAsync(groupName, members);
+        ApiResult result;
+        if (GroupId.HasValue) result = await ExpenseService.UpdateGroupAsync(GroupId.Value, formModel.GroupName, members);
+        else result = await ExpenseService.CreateGroupAsync(formModel.GroupName, members);
         
         submitting = false;
 
-        if (success)
+        if (result.Succeeded)
         {
             ToastService.ShowToast(GroupId.HasValue ? "Grupo actualizado" : "¡Círculo creado!", ToastLevel.Success);
             Navigation.NavigateTo("/groups");
         }
         else
         {
-            ModalService.ShowModal("Error", "No se pudo procesar la solicitud.", ModalType.Error);
+            ModalService.ShowModal("Error", result.Message ?? "No se pudo procesar la solicitud.", ModalType.Error);
         }
     }
 }

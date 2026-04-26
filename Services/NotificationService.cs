@@ -30,7 +30,7 @@ public class NotificationService : INotificationService
             var response = await _httpClient.GetAsync("api/v1/notifications");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<List<NotificationViewModel>>>();
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<List<NotificationViewModel>>>();
                 return result?.Data ?? new List<NotificationViewModel>();
             }
         }

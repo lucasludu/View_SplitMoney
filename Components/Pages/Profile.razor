@@ -6,118 +6,148 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject IModalService ModalService
-@inject AuthenticationStateProvider AuthStateProvider
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <div class="profile-wrapper">
-    <div class="container-fluid px-3 py-4 p-md-5">
+    <div class="container py-4 py-md-5">
         
-        <!-- Header -->
-        <div class="d-flex align-items-center mb-5 gap-3 fade-in">
-            <button class="back-btn-modern" @onclick="GoBack">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </button>
-            <div>
-                <p class="header-tag mb-1">Ajustes</p>
-                <h1 class="brand-font m-0">Mi Perfil</h1>
-            </div>
-            <button class="logout-btn ms-auto" @onclick="HandleLogout">
-                <span class="material-symbols-rounded">logout</span>
-                <span class="d-none d-md-inline">Cerrar Sesión</span>
-            </button>
+        <!-- Header Section -->
+        <div class="profile-header fade-in mb-5">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="back-btn-modern" @onclick="GoBack" title="Volver">
+                        <span class="material-symbols-rounded">arrow_back</span>
+                    </button>
+                    <div>
+                        <p class="header-tag m-0">Ajustes</p>
+                        <h1 class="brand-font m-0 h2-responsive">Mi Perfil</h1>
+                    </div>
+                </div>
         </div>
 
         @if (isLoading)
         {
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary"></div>
+            <div class="loading-state py-5 text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
             </div>
         }
         else
         {
-            <div class="row g-4 justify-content-center">
-                <div class="col-12 col-lg-8">
-                    <div class="premium-card fade-in-up">
+            <div class="row justify-content-center g-4">
+                <div class="col-12 col-lg-8 col-xl-7">
+                    <div class="profile-card fade-in-up">
                         
-                        <!-- Avatar Section -->
+                        <!-- Avatar & Identity Section -->
                         <div class="profile-hero mb-5">
-                            <div class="avatar-container">
-                                <div class="avatar-large">
-                                    @(userProfile.FirstName.Substring(0, 1).ToUpper())
+                            <div class="avatar-outer-ring">
+                                <div class="avatar-container">
+                                    <UserAvatar Name="@userProfile.FirstName" Class="editorial-avatar-hero" />
+                                    @if (userProfile.Role == "PremiumUser" || IsUserPremium)
+                                    {
+                                        <div class="premium-badge-float" title="Usuario Premium">
+                                            <span class="material-symbols-rounded">verified</span>
+                                        </div>
+                                    }
                                 </div>
-                                @if (userProfile.Role == "PremiumUser")
-                                {
-                                    <div class="premium-badge-float">
-                                        <span class="material-symbols-rounded">verified</span>
-                                    </div>
-                                }
                             </div>
-                            <div class="mt-3">
-                                <h2 class="brand-font m-0">@userProfile.FirstName @userProfile.LastName</h2>
-                                <p class="user-role-text">@(userProfile.Role == "PremiumUser" ? "Miembro Premium" : "Usuario Estándar")</p>
+                            <div class="mt-4">
+                                <h2 class="brand-font m-0 h3">@userProfile.FirstName @userProfile.LastName</h2>
+                                <div class="role-badge-container mt-2">
+                                    <span class="user-role-badge @(IsUserPremium ? "premium" : "standard")">
+                                        @(IsUserPremium ? "Miembro Premium" : "Usuario Estándar")
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <form @onsubmit="HandleUpdate">
-                            <div class="section-box mb-5">
-                                <h3 class="section-subtitle mb-4">Información Personal</h3>
+                        <EditForm Model="userProfile" OnValidSubmit="HandleUpdateProfile">
+                            <DataAnnotationsValidator />
+                            
+                            <!-- Personal Information -->
+                            <div class="section-container mb-5">
+                                <div class="d-flex align-items-center gap-2 mb-4">
+                                    <span class="material-symbols-rounded section-icon">account_circle</span>
+                                    <h3 class="section-title m-0">Información Personal</h3>
+                                </div>
+                                
                                 <div class="row g-3">
-                                    <div class="col-12 col-md-6">
-                                        <div class="input-group-modern">
-                                            <span class="material-symbols-rounded input-icon">person</span>
-                                            <input type="text" class="modern-input" placeholder="Nombre" @bind="userProfile.FirstName" required />
+                                    <div class="col-md-6">
+                                        <div class="premium-input-group">
+                                            <label class="premium-input-label">Nombre</label>
+                                            <div class="premium-input-wrapper">
+                                                <span class="material-symbols-rounded premium-input-icon">person</span>
+                                                <InputText class="premium-input" placeholder="Tu nombre" @bind-Value="userProfile.FirstName" />
+                                            </div>
+                                            <ValidationMessage For="@(() => userProfile.FirstName)" class="error-msg" />
                                         </div>
                                     </div>
-                                    <div class="col-12 col-md-6">
-                                        <div class="input-group-modern">
-                                            <span class="material-symbols-rounded input-icon">badge</span>
-                                            <input type="text" class="modern-input" placeholder="Apellido" @bind="userProfile.LastName" required />
+                                    <div class="col-md-6">
+                                        <div class="premium-input-group">
+                                            <label class="premium-input-label">Apellido</label>
+                                            <div class="premium-input-wrapper">
+                                                <span class="material-symbols-rounded premium-input-icon">badge</span>
+                                                <InputText class="premium-input" placeholder="Tu apellido" @bind-Value="userProfile.LastName" />
+                                            </div>
+                                            <ValidationMessage For="@(() => userProfile.LastName)" class="error-msg" />
                                         </div>
                                     </div>
                                     <div class="col-12">
-                                        <div class="input-group-modern disabled-input">
-                                            <span class="material-symbols-rounded input-icon">mail</span>
-                                            <input type="email" class="modern-input" @bind="userProfile.Email" readonly />
+                                        <div class="premium-input-group">
+                                            <label class="premium-input-label">Correo Electrónico</label>
+                                            <div class="premium-input-wrapper readonly">
+                                                <span class="material-symbols-rounded premium-input-icon">mail</span>
+                                                <input type="email" class="premium-input" value="@userProfile.Email" readonly />
+                                            </div>
+                                            <p class="input-hint mt-2">
+                                                <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">info</span>
+                                                El correo no puede ser modificado.
+                                            </p>
                                         </div>
-                                        <p class="input-hint mt-2">El correo electrónico no se puede cambiar por seguridad.</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Subscription Section -->
-                            <div class="section-box mb-5">
-                                <h3 class="section-subtitle mb-4">Suscripción y Plan</h3>
-                                <div class="plan-card @(IsUserPremium ? "gold-theme" : "standard-theme")">
-                                    <div class="d-flex align-items-center gap-4">
-                                        <div class="plan-icon-box">
+                            <!-- Plan Section -->
+                            <div class="section-container mb-5">
+                                <div class="d-flex align-items-center gap-2 mb-4">
+                                    <span class="material-symbols-rounded section-icon">star</span>
+                                    <h3 class="section-title m-0">Suscripción y Plan</h3>
+                                </div>
+                                
+                                <div class="plan-display-card @(IsUserPremium ? "premium-active" : "standard-active")">
+                                    <div class="plan-card-content">
+                                        <div class="plan-icon">
                                             <span class="material-symbols-rounded">@(IsUserPremium ? "workspace_premium" : "person_outline")</span>
                                         </div>
-                                        <div class="flex-grow-1">
+                                        <div class="plan-info">
                                             <h4 class="m-0">Plan @(IsUserPremium ? "Premium" : "Básico")</h4>
-                                            <p class="m-0 opacity-60">@(IsUserPremium ? "Acceso total e ilimitado." : "Funciones estándar activas.")</p>
+                                            <p class="m-0 opacity-70 small">@(IsUserPremium ? "Disfrutando de todas las funciones ilimitadas." : "Acceso a funciones esenciales.")</p>
                                         </div>
                                         @if (!IsUserPremium)
                                         {
-                                            <button type="button" class="btn-upgrade" @onclick='() => Navigation.NavigateTo("/premium")'>Mejorar ✨</button>
+                                            <button type="button" class="btn-upgrade-minimal" @onclick='() => Navigation.NavigateTo("/premium")'>
+                                                Mejorar ✨
+                                            </button>
                                         }
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="action-footer mt-5">
-                                <button type="submit" class="btn-submit-premium w-100 py-3" disabled="@submitting">
+                            <div class="profile-actions pt-4">
+                                <button type="submit" class="btn-save-profile" disabled="@submitting">
                                     @if (submitting)
                                     {
-                                        <div class="spinner"></div>
+                                        <div class="spinner-white"></div>
+                                        <span>Guardando...</span>
                                     }
                                     else
                                     {
                                         <span>Guardar Cambios</span>
-                                        <span class="material-symbols-rounded">save</span>
+                                        <span class="material-symbols-rounded">done_all</span>
                                     }
                                 </button>
                             </div>
-                        </form>
+                        </EditForm>
                     </div>
                 </div>
             </div>
@@ -129,19 +159,13 @@
     private UserDto userProfile = new();
     private bool isLoading = true;
     private bool submitting = false;
-    private bool isDeleting = false;
-    private bool isSimulatedPremium = false;
-    private bool IsUserPremium => 
-        (userProfile.Role?.Equals("PremiumUser", StringComparison.OrdinalIgnoreCase) ?? false) || 
-        (userProfile.Role?.Equals("Premium", StringComparison.OrdinalIgnoreCase) ?? false) ||
-        isSimulatedPremium;
+    private bool IsUserPremium = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            isSimulatedPremium = (await LocalStorage.GetItemAsync<bool>("is_simulated_premium")) || authState.User.IsInRole("PremiumUser");
+            IsUserPremium = await AuthService.IsPremiumAsync();
 
             var response = await AuthService.GetProfile();
             if (response != null && response.Succeeded && response.Data != null)
@@ -152,13 +176,13 @@
         }
         catch (Exception)
         {
-            if (isSimulatedPremium) userProfile.Role = "PremiumUser";
+            if (IsUserPremium) userProfile.Role = "PremiumUser";
             isLoading = false;
         }
         finally { isLoading = false; }
     }
 
-    private async Task HandleUpdate()
+    private async Task HandleUpdateProfile()
     {
         submitting = true;
         try
@@ -170,11 +194,6 @@
         finally { submitting = false; }
     }
 
-    private async Task HandleLogout()
-    {
-        await AuthService.Logout();
-        Navigation.NavigateTo("/login", true);
-    }
 
     private void GoBack() => Navigation.NavigateTo("/");
 }

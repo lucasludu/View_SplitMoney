@@ -4,11 +4,15 @@ namespace SplitMoney.Client.Services
 {
     public interface IAuthService
     {
-        Task<Response<LoginResponse>> Login(LoginRequest loginRequest);
-        Task<Response<string>> Register(RegisterUserRequest registerRequest);
+        Task<ApiResult<LoginResponse>> Login(LoginRequest loginRequest);
+        Task<ApiResult<string>> Register(RegisterUserRequest registerRequest);
         Task Logout();
         Task<string> RefreshToken();
-        Task<Response<UserDto>> GetProfile();
-        Task<Response<string>> UpdateProfile(UserDto userUpdate);
+        Task<ApiResult<UserDto>> GetProfile();
+        Task<ApiResult<string>> UpdateProfile(UserDto userUpdate);
+        Task<bool> IsPremiumAsync();
+        Task SimulatePremiumAsync();
+        Task<ApiResult<string>> ForgotPassword(string email);
+        Task<ApiResult<string>> ResetPassword(ResetPasswordRequest resetRequest);
     }
 }

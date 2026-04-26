@@ -17,8 +17,9 @@
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert px-3 py-2 small mb-4 error-alert fade-in-up delay-2">
-                @errorMessage
+            <div class="error-alert fade-in-up delay-2 mb-4">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">warning</span>
+                <span>@errorMessage</span>
             </div>
         }
 

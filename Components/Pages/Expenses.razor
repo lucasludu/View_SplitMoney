@@ -84,8 +84,11 @@
         isLoading = true;
         try
         {
-            var dashboard = await ExpenseService.GetDashboardAsync();
-            expenses = dashboard?.RecentExpenses?.ToList();
+            var result = await ExpenseService.GetDashboardAsync();
+            if (result.Succeeded)
+            {
+                expenses = result.Data?.RecentExpenses?.ToList();
+            }
         }
         finally { isLoading = false; }
     }

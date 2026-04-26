@@ -4,7 +4,11 @@ namespace SplitMoney.Client.Models
 {
     public class LoginRequest
     {
+        [Required(ErrorMessage = "El correo electrónico es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de correo no válido")]
         public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La contraseña es obligatoria")]
         public string Password { get; set; } = string.Empty;
     }
 
@@ -45,21 +49,48 @@ namespace SplitMoney.Client.Models
         public string Rol { get; set; } = string.Empty;
     }
 
-    public class Response<T>
-    {
-        public T? Data { get; set; }
-        public bool Succeeded { get; set; }
-        public string? Message { get; set; }
-        public List<string>? Errors { get; set; }
-    }
     public class UserDto
     {
         public string Id { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El nombre es obligatorio")]
+        [StringLength(50, ErrorMessage = "El nombre es demasiado largo")]
         public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El apellido es obligatorio")]
+        [StringLength(50, ErrorMessage = "El apellido es demasiado largo")]
         public string LastName { get; set; } = string.Empty;
+
+        [EmailAddress(ErrorMessage = "Formato de correo no válido")]
         public string Email { get; set; } = string.Empty;
+        
         public string? PhoneNumber { get; set; }
         public string Role { get; set; } = string.Empty;
         public string FullName => $"{FirstName} {LastName}".Trim();
+    }
+
+    public class ForgotPasswordRequest
+    {
+        [Required(ErrorMessage = "El correo electrónico es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de correo no válido")]
+        public string Email { get; set; } = string.Empty;
+    }
+
+    public class ResetPasswordRequest
+    {
+        [Required(ErrorMessage = "El correo electrónico es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de correo no válido")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El código es obligatorio")]
+        public string Token { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La nueva contraseña es obligatoria")]
+        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Debes confirmar la contraseña")]
+        [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

@@ -9,7 +9,7 @@
 @inject IToastService ToastService
 @inject IModalService ModalService
 @inject AuthenticationStateProvider AuthStateProvider
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IAuthService AuthService
 @using SplitMoney.Client.Components.Dashboard
 
 <div class="create-expense-wrapper" @onclick="CloseDropdowns">
@@ -37,11 +37,14 @@
             <div class="row g-4">
                 <!-- Main Content Column -->
                 <div class="col-12 col-lg-7">
-                    <div class="premium-card fade-in-up">
-                        
-                        <!-- Hero Amount Input -->
-                        <div class="amount-hero-section mb-5">
-                            <label class="section-label mb-2">Monto Total</label>
+                    <EditForm Model="expense" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
+                        <div class="premium-card fade-in-up">
+                            
+                            <!-- Hero Amount Input -->
+                            <div class="amount-hero-section mb-5">
+                                <label class="section-label mb-2">Monto Total</label>
+                                <ValidationMessage For="@(() => expense.TotalAmount)" />
                             <div class="amount-input-container">
                                 <span class="currency-symbol">$</span>
                                 <input type="number" class="amount-field brand-font" 
@@ -65,12 +68,14 @@
                                             }
                                         </select>
                                     </div>
+                                    <ValidationMessage For="@(() => expense.GroupId)" />
                                 </div>
                                 <div class="col-12">
                                     <div class="input-group-modern">
                                         <span class="material-symbols-rounded input-icon">edit_note</span>
                                         <input type="text" class="modern-input" placeholder="Descripción (ej: Cena, Supermercado...)" @bind="expense.Title" />
                                     </div>
+                                    <ValidationMessage For="@(() => expense.Title)" />
                                 </div>
                             </div>
                         </div>
@@ -131,7 +136,6 @@
                                 {
                                     <div class="payer-card">
                                         <div class="payer-info">
-                                            <div class="payer-avatar">@p.UserName.Substring(0,1).ToUpper()</div>
                                             <span class="payer-name">@p.UserName</span>
                                         </div>
                                         <div class="payer-input-container">
@@ -194,7 +198,7 @@
                             </div>
                         </div>
 
-                        <button class="btn-submit-premium mt-5" disabled="@(submitting || !CanSubmit)" @onclick="HandleSubmit">
+                        <button type="submit" class="btn-submit-premium mt-5" disabled="@(submitting || !CanSubmit)">
                             @if (submitting)
                             {
                                 <div class="spinner"></div>
@@ -206,6 +210,7 @@
                             }
                         </button>
                     </div>
+                    </EditForm>
                 </div>
 
                 <!-- Summary Panel -->
@@ -304,8 +309,8 @@
 
     private async Task HandleSimulatePremium() 
     {
+        await AuthService.SimulatePremiumAsync();
         isPremium = true;
-        await LocalStorage.SetItemAsync("is_simulated_premium", true);
         StateHasChanged();
     }
 
@@ -354,19 +359,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var isRealPremium = authState.User.IsInRole("PremiumUser");
-        var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
-        isPremium = isRealPremium || isSimulatedPremium;
+        isPremium = await AuthService.IsPremiumAsync();
 
-        userGroups = await ExpenseService.GetUserGroupsAsync();
-        categories = await ExpenseService.GetCategoriesAsync();
+        var groupsResult = await ExpenseService.GetUserGroupsAsync();
+        userGroups = groupsResult.Succeeded && groupsResult.Data != null ? groupsResult.Data : new List<GroupSummaryViewModel>();
+        
+        var catResult = await ExpenseService.GetCategoriesAsync();
+        categories = catResult.Succeeded && catResult.Data != null ? catResult.Data : new List<CategoryDto>();
 
         if (ExpenseId.HasValue)
         {
-            var detail = await ExpenseService.GetExpenseDetailsAsync(ExpenseId.Value);
-            if (detail != null)
+            var detailResult = await ExpenseService.GetExpenseDetailsAsync(ExpenseId.Value);
+            if (detailResult.Succeeded && detailResult.Data != null)
             {
+                var detail = detailResult.Data;
                 expense.Title = detail.Description;
                 expense.TotalAmount = detail.TotalAmount;
                 expense.Date = detail.Date;
@@ -398,7 +404,8 @@
     private async Task LoadGroupMembers()
     {
         if (string.IsNullOrEmpty(SelectedGroupId)) return;
-        currentGroupMembers = await ExpenseService.GetGroupMembersAsync(SelectedGroupId);
+        var membersResult = await ExpenseService.GetGroupMembersAsync(SelectedGroupId);
+        currentGroupMembers = membersResult.Succeeded && membersResult.Data != null ? membersResult.Data : new List<GroupMemberResponse>();
         expense.Payments = currentGroupMembers.Select(m => new ExpensePaymentViewModel { UserId = m.UserId, UserName = m.FullName, Amount = 0 }).ToList();
         availableSplits = currentGroupMembers.Select(m => new ExpensePaymentViewModel { UserId = m.UserId, UserName = m.FullName }).ToList();
         selectedSplits = new HashSet<string>(currentGroupMembers.Select(m => m.UserId));
@@ -429,11 +436,13 @@
         var finalPayments = expense.Payments.Where(p => p.Amount > 0).ToList();
         var originalPayments = expense.Payments;
         expense.Payments = finalPayments;
-        bool success;
-        if (ExpenseId.HasValue) success = await ExpenseService.UpdateExpenseAsync(ExpenseId.Value, expense);
-        else success = await ExpenseService.CreateExpenseAsync(expense);
+        
+        ApiResult result;
+        if (ExpenseId.HasValue) result = await ExpenseService.UpdateExpenseAsync(ExpenseId.Value, expense);
+        else result = await ExpenseService.CreateExpenseAsync(expense);
+        
         submitting = false;
-        if (success) { ToastService.ShowToast("¡Gasto cargado! 🚀", ToastLevel.Success); Navigation.NavigateTo("/"); }
-        else { expense.Payments = originalPayments; ModalService.ShowModal("Error", "No se pudo guardar el gasto.", ModalType.Error); }
+        if (result.Succeeded) { ToastService.ShowToast("¡Gasto guardado! 🚀", ToastLevel.Success); Navigation.NavigateTo("/"); }
+        else { expense.Payments = originalPayments; ModalService.ShowModal("Error", result.Message ?? "No se pudo guardar el gasto.", ModalType.Error); }
     }
 }

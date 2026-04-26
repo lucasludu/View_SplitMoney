@@ -109,6 +109,8 @@
         {
             <div class="settle-modal-overlay" @onclick="() => showForm = false">
                 <div class="premium-modal fade-in-up" @onclick:stopPropagation="true">
+                    <EditForm Model="settlement" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
                     
                     <div class="modal-header-premium">
                         <div class="payment-icon-hero">
@@ -118,10 +120,11 @@
                         <p class="modal-subtitle">Estás saldando tu cuenta con <strong>@selectedCreditorName</strong></p>
                     </div>
 
-                    <div class="amount-hero-box mb-4">
+                    <div class="amount-hero-box mb-1">
                         <span class="m-symbol">$</span>
                         <input type="number" step="0.01" class="m-input brand-font" @bind="settlement.Amount" />
                     </div>
+                    <ValidationMessage For="@(() => settlement.Amount)" />
 
                     <div class="method-section mb-5">
                         <label class="section-label mb-3">Medio de Pago</label>
@@ -139,9 +142,9 @@
                         </div>
                     </div>
 
-                    <div class="modal-footer-btns">
-                        <button class="btn-cancel" @onclick="() => showForm = false">Cerrar</button>
-                        <button type="button" class="btn-submit-premium" disabled="@submitting" @onclick="HandleSubmit">
+                    <div class="modal-footer-btns mt-5">
+                        <button type="button" class="btn-cancel" @onclick="() => showForm = false">Cerrar</button>
+                        <button type="submit" class="btn-submit-premium" disabled="@submitting">
                             @if (submitting)
                             {
                                 <div class="spinner"></div>
@@ -153,6 +156,7 @@
                             }
                         </button>
                     </div>
+                    </EditForm>
                 </div>
             </div>
         }
@@ -182,11 +186,14 @@
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var currentUserId = authState.User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == ClaimTypes.NameIdentifier)?.Value;
-            var groups = await ExpenseService.GetUserGroupsAsync();
+            var groupsResult = await ExpenseService.GetUserGroupsAsync();
+            var groups = groupsResult.Succeeded ? groupsResult.Data : new List<GroupSummaryViewModel>();
             
             foreach (var group in groups)
             {
-                var balances = await ExpenseService.GetGroupBalancesAsync(group.Id);
+                var balancesResult = await ExpenseService.GetGroupBalancesAsync(group.Id);
+                var balances = balancesResult.Succeeded ? balancesResult.Data : new List<BalanceResponse>();
+                
                 var activeDebts = balances
                     .Where(b => b.DebtorId == currentUserId && b.Amount > 0)
                     .Select(b => new DebtSummaryViewModel 
@@ -199,7 +206,8 @@
                     });
                 myDebts.AddRange(activeDebts);
             }
-            mySettlements = await ExpenseService.GetMySettlementsAsync();
+            var settlementsResult = await ExpenseService.GetMySettlementsAsync();
+            mySettlements = settlementsResult.Succeeded ? settlementsResult.Data : new List<SettlementViewModel>();
         }
         finally { isLoading = false; }
     }
@@ -215,15 +223,14 @@
 
     private async Task HandleSubmit()
     {
-        if (settlement.Amount <= 0) { ToastService.ShowToast("Monto inválido", ToastLevel.Warning); return; }
         submitting = true;
-        var success = await ExpenseService.SettleDebtAsync(settlement);
+        var result = await ExpenseService.SettleDebtAsync(settlement);
         submitting = false;
-        if (success) {
+        if (result.Succeeded) {
             ToastService.ShowToast("¡Pago registrado! ✅", ToastLevel.Success);
             showForm = false;
             await LoadData();
-        } else { ToastService.ShowToast("Error al procesar el pago", ToastLevel.Error); }
+        } else { ToastService.ShowToast(result.Message ?? "Error al procesar el pago", ToastLevel.Error); }
     }
 
     private class DebtSummaryViewModel

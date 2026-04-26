@@ -12,76 +12,9 @@
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 @inject IModalService ModalService
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
-
 @inject INotificationService NotificationService
+@inject IAuthService AuthService
 
-<style>
-    /* Notification Styles */
-    .notification-trigger-container {
-        position: relative;
-        display: inline-block;
-    }
-
-    .notification-badge {
-        position: absolute;
-        top: -2px;
-        right: -2px;
-        background: var(--primary);
-        color: white;
-        font-size: 0.65rem;
-        font-weight: 700;
-        min-width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid var(--background);
-        z-index: 5;
-    }
-
-    .notification-overlay-home {
-        position: absolute;
-        top: 55px;
-        right: 0;
-        z-index: 9999; /* Máxima prioridad */
-        animation: fadeInDown 0.3s ease-out;
-    }
-
-    .notification-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 9990;
-        background: transparent;
-    }
-
-    @@keyframes fadeInDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .header-main-wrapper {
-        position: relative;
-        z-index: 100; /* Prioridad sobre el contenido de abajo */
-    }
-
-    @@media (max-width: 767.98px) {
-        .notification-overlay-home {
-            position: fixed;
-            top: 70px;
-            right: 15px;
-            left: 15px;
-            z-index: 9999 !important;
-        }
-        .notification-overlay-home > div {
-            width: 100% !important;
-        }
-    }
-</style>
 
 <div class="container-fluid px-3 py-4 p-md-4 container-max">
    
@@ -237,7 +170,7 @@
                             {
                                 <div class="balance-item p-3 mb-2 d-flex justify-content-between align-items-center" style="background: rgba(16, 185, 129, 0.03);">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="member-avatar" style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant);">@payment.UserName.Substring(0, 1).ToUpper()</div>
+                                        <UserAvatar Name="@payment.UserName" Class="member-avatar" Style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant);" />
                                         <span class="fw-bold member-row-info">@payment.UserName</span>
                                     </div>
                                     <div class="amount-badge bg-success text-white border-0">
@@ -259,7 +192,7 @@
                             {
                                 <div class="balance-item p-3 mb-2 d-flex justify-content-between align-items-center" style="opacity: @(split.AmountOwed > 0 ? "1" : "0.6"); background: rgba(239, 68, 68, 0.03);">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="member-avatar" style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant);">@split.UserName.Substring(0, 1).ToUpper()</div>
+                                        <UserAvatar Name="@split.UserName" Class="member-avatar" Style="background: var(--surface-container-highest); color: var(--on-surface); border: 1px solid var(--outline-variant);" />
                                         <span class="member-row-info">@split.UserName</span>
                                     </div>
                                     <div class="amount-badge @(split.AmountOwed > 0 ? "bg-danger text-white" : "bg-secondary-subtle text-editorial-muted") border-0">
@@ -285,7 +218,7 @@
 
                                 <div class="balance-item p-3 mb-2 d-flex justify-content-between align-items-center final-balance-card" style="border: 1px solid @(diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "var(--outline-variant)");">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="member-avatar" style="background: @(diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "var(--surface-container-highest)"); color: white;">@memberName.Substring(0, 1).ToUpper()</div>
+                                        <UserAvatar Name="@memberName" Class="member-avatar" Style="@($"background: {(diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "var(--surface-container-highest)")}; color: white;")" />
                                         <div>
                                             <p class="m-0 fw-bold member-row-info">@memberName</p>
                                             <p class="m-0 x-small text-editorial-muted" style="font-size: 0.7rem;">Puso @paid.ToString("C0") / Gasto @owed.ToString("C0")</p>
@@ -395,15 +328,14 @@
     private TipViewModel? currentTip;
     private ExpenseAuditViewModel? auditHistory;
     private ExpenseDetailViewModel? selectedExpense;
-    private AuthenticationState? authState;
 
     private void ShowTipModal() => isTipModalOpen = true;
     private void CloseTipModal() => isTipModalOpen = false;
     private void HandleUpgrade() => Navigation.NavigateTo("/premium");
     private async Task HandleSimulatePremium() 
     {
+        await AuthService.SimulatePremiumAsync();
         isPremium = true;
-        await LocalStorage.SetItemAsync("is_simulated_premium", true);
         ToastService.ShowToast("🌟 MODO PREMIUM ACTIVADO (SIMULACIÓN)", ToastLevel.Info);
         StateHasChanged();
     }
@@ -412,7 +344,16 @@
     {
         showAudit = false; // Reset to details tab
         auditHistory = null;
-        selectedExpense = await ExpenseService.GetExpenseDetailsAsync(expenseId);
+        var detailResult = await ExpenseService.GetExpenseDetailsAsync(expenseId);
+        if (detailResult.Succeeded)
+        {
+            selectedExpense = detailResult.Data;
+        }
+        else
+        {
+            selectedExpense = null;
+            ToastService.ShowToast(detailResult.Message ?? "Error al cargar detalle", ToastLevel.Error);
+        }
         StateHasChanged();
     }
 
@@ -427,8 +368,17 @@
         }
         showAudit = true;
         loadingAudit = true;
-        auditHistory = await ExpenseService.GetExpenseAuditAsync(selectedExpense.Id);
+        var auditResult = await ExpenseService.GetExpenseAuditAsync(selectedExpense.Id);
         loadingAudit = false;
+        
+        if (auditResult.Succeeded)
+        {
+            auditHistory = auditResult.Data;
+        }
+        else
+        {
+            ToastService.ShowToast(auditResult.Message ?? "Error al cargar historial", ToastLevel.Error);
+        }
     }
 
     private void CloseExpenseDetail()
@@ -440,19 +390,24 @@
     {
         if (selectedExpense == null) return;
         
-        isDeleting = true;
-        var success = await ExpenseService.DeleteExpenseAsync(selectedExpense.Id);
-        isDeleting = false;
-
-        if (success)
+        bool confirmed = await ModalService.ShowConfirmAsync("Eliminar Gasto", $"¿Borrar '{selectedExpense.Description}'? Esta acción es irreversible.", ModalType.Warning);
+        
+        if (confirmed)
         {
-            ToastService.ShowToast("Gasto eliminado 🗑️", ToastLevel.Success);
-            selectedExpense = null;
-            await OnInitializedAsync(); // Refresh dashboard
-        }
-        else
-        {
-            ToastService.ShowToast("No se pudo eliminar el gasto", ToastLevel.Error);
+            isDeleting = true;
+            var result = await ExpenseService.DeleteExpenseAsync(selectedExpense.Id);
+            isDeleting = false;
+    
+            if (result.Succeeded)
+            {
+                ToastService.ShowToast("Gasto eliminado 🗑️", ToastLevel.Success);
+                selectedExpense = null;
+                await OnInitializedAsync(); // Refresh dashboard
+            }
+            else
+            {
+                ToastService.ShowToast(result.Message ?? "No se pudo eliminar el gasto", ToastLevel.Error);
+            }
         }
     }
 
@@ -487,21 +442,26 @@
         
         NotificationService.NotificationsChanged += OnNotificationsChanged;
 
-        authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        
-        // Cargar estado premium real o simulado
-        var isRealPremium = authState.User.IsInRole("PremiumUser");
-        var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
-        isPremium = isRealPremium || isSimulatedPremium;
+        isPremium = await AuthService.IsPremiumAsync();
 
-        var user = authState.User;
+        var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
         if (user.Identity?.IsAuthenticated == true)
         {
             var firstName = user.Claims.FirstOrDefault(c => c.Type == "FirstName" || c.Type == ClaimTypes.Name)?.Value;
             if (!string.IsNullOrEmpty(firstName))
                 userName = firstName;
         }
-        dashboard = await ExpenseService.GetDashboardAsync();
+        var dashboardResult = await ExpenseService.GetDashboardAsync();
+        if (dashboardResult.Succeeded)
+        {
+            dashboard = dashboardResult.Data;
+        }
+        else
+        {
+            dashboard = null;
+            ToastService.ShowToast(dashboardResult.Message ?? "Error de conexión", ToastLevel.Error);
+        }
+        
         currentTip = TipService.GetMonthlyTip();
         
         await RefreshUnreadCount();
@@ -523,7 +483,8 @@
 
     private async Task HandleCreateExpenseClick()
     {
-        var groups = await ExpenseService.GetUserGroupsAsync();
+        var groupsResult = await ExpenseService.GetUserGroupsAsync();
+        var groups = groupsResult.Data;
         if (groups == null || !groups.Any())
         {
             ModalService.ShowModal("No hay Grupos", "Debes pertenecer a un círculo antes de cargar gastos. Crea tu primer grupo ahora.", ModalType.Warning);

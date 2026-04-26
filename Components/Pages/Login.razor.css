@@ -208,3 +208,23 @@
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Error Alert */
+.error-alert {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+    color: white;
+    padding: 0.8rem 1.25rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+}
+
+.error-alert span {
+    line-height: 1;
+}

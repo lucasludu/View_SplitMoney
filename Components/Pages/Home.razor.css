@@ -1,210 +1,181 @@
-/* CSS Isolation for Home.razor */
-
-.container-max {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* Animations */
-.fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
-}
-
-.fade-in-up {
-    animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-/* Header Styles */
-.perspective-label {
-    color: var(--on-surface-variant);
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    opacity: 0.7;
-}
-
-.home-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--on-surface);
-}
-
-.home-title span {
-    color: var(--primary);
+.notification-trigger-container {
+    position: relative;
+    display: inline-block;
 }
 
 .circle-btn-container {
-    background-color: var(--surface-container);
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: 50%;
+    background: #ffca28; /* Yellow */
+    color: #000;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--outline-variant);
-    color: var(--on-surface-variant);
-    transition: all 0.2s;
+    border: none;
+    box-shadow: 0 4px 15px rgba(255, 202, 40, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
 }
 
 .circle-btn-container:hover {
-    background-color: var(--surface-container-high);
-    color: var(--primary);
+    transform: scale(1.1);
+    background: #ffd54f;
+    box-shadow: 0 6px 20px rgba(255, 202, 40, 0.4);
 }
 
-.architect-badge {
-    background-color: rgba(var(--primary-rgb), 0.1);
-    color: var(--primary);
-    padding: 0.6rem 1rem;
+.circle-btn-container span {
+    font-size: 1.5rem;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.65rem;
     font-weight: 700;
-    font-size: 0.75rem;
-    border-radius: 12px;
-    border: 1px solid rgba(var(--primary-rgb), 0.2);
-}
-
-/* Empty State Card */
-.empty-dashboard-card {
-    background: var(--surface-container);
-    border: 1px solid var(--outline-variant);
-    border-radius: 2rem;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-}
-
-.empty-icon-box {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto;
-    background: rgba(var(--primary-rgb), 0.1);
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--primary);
-}
-
-.empty-icon-box span {
-    font-size: 2.5rem;
-}
-
-.empty-text {
-    color: var(--on-surface-variant);
-    max-width: 400px;
-    margin: 0 auto;
-    line-height: 1.6;
-}
-
-.modern-outline-btn {
-    background: transparent;
-    border: 1.5px solid var(--primary);
-    color: var(--primary);
-    padding: 1rem 2rem;
-    border-radius: 99px;
-    font-weight: 700;
-    transition: all 0.2s;
-}
-
-.modern-outline-btn:hover {
-    background: rgba(var(--primary-rgb), 0.05);
-}
-
-/* Error Card */
-.error-card {
-    background: rgba(var(--error-rgb), 0.05);
-    border: 1px solid rgba(var(--error-rgb), 0.2);
-    border-radius: 2rem;
-}
-
-.error-icon-box {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto;
-    background: rgba(var(--error-rgb), 0.1);
+    min-width: 18px;
+    height: 18px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--error);
+    border: 2px solid var(--background);
+    z-index: 5;
 }
 
-/* Skeletons */
-.stats-skeleton-container {
-    display: flex;
-    gap: 1rem;
-    overflow: hidden;
-}
-
-.skeleton-stat-card {
-    flex: 1;
-    height: 100px;
-    background: var(--surface-container);
-    border-radius: 1.5rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.skeleton-stat-card::after {
-    content: "";
+.notification-overlay-home {
     position: absolute;
-    top: 0; right: 0; bottom: 0; left: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-    animation: shimmer 1.5s infinite;
+    top: 55px;
+    right: 0;
+    z-index: 9999; /* Máxima prioridad */
+    animation: fadeInDown 0.3s ease-out;
 }
 
-@keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+.notification-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9990;
+    background: transparent;
 }
 
-.skeleton {
-    background: var(--surface-container);
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header-main-wrapper {
     position: relative;
-    overflow: hidden;
+    z-index: 100; /* Prioridad sobre el contenido de abajo */
 }
 
-/* Overlay Detail Panel */
-.details-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-    z-index: 2000; display: flex; justify-content: center; align-items: flex-end;
+@media (max-width: 767.98px) {
+    .notification-overlay-home {
+        position: fixed;
+        top: 70px;
+        right: 15px;
+        left: 15px;
+        z-index: 9999 !important;
+    }
+    .notification-overlay-home > div {
+        width: 100% !important;
+    }
 }
 
-.details-panel {
-    width: 100%; max-width: 500px; background: var(--surface);
-    border-radius: 2.5rem 2.5rem 0 0; max-height: 85vh;
-    animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex; flex-direction: column; border: 1px solid var(--outline-variant);
-    border-bottom: none;
+/* Expense Detail Panel Styles */
+.amount-hero-box {
+    background: linear-gradient(135deg, var(--surface-container-low), var(--surface-container-lowest));
+    border: 1px solid var(--outline-variant);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
 }
 
-@keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-.panel-header {
-    padding: 1.5rem !important;
+.amount-hero-label {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    opacity: 0.6;
 }
 
-.panel-close-btn {
-    background: var(--surface-container-high);
-    border: none;
+.section-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     color: var(--on-surface-variant);
 }
 
-.amount-hero-box {
-    background: var(--surface-container);
-    border-radius: 1.5rem !important;
+.balances-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.balance-item {
+    border-radius: 1rem;
+    border: 1px solid var(--outline-variant);
+    transition: all 0.2s;
+}
+
+.member-row-info {
+    font-size: 0.95rem;
+    color: var(--on-surface);
+}
+
+.amount-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.9rem;
 }
 
 .final-balance-card {
     background: var(--surface-container-low);
-    border-width: 1px !important;
+    transition: transform 0.2s;
 }
 
-@media (min-width: 768px) {
-    .details-overlay { align-items: center; padding: 2rem; }
-    .details-panel { border-radius: 2rem; border-bottom: 1px solid var(--outline-variant); }
+.final-balance-card:hover {
+    transform: scale(1.02);
+}
+
+.balance-diff-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+}
+
+.balance-diff-value {
+    font-size: 1rem;
+}
+
+.tab-selector-container {
+    background: var(--surface-container-lowest);
+}
+
+.border-transparent {
+    border-color: transparent !important;
+}
+
+.audit-timeline {
+    border-left: 2px dashed var(--outline-variant);
+    margin-left: 10px;
+}
+
+.audit-item::before {
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--surface);
+}
+
+.x-small {
+    font-size: 0.75rem;
 }

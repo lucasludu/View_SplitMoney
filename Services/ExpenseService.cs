@@ -21,218 +21,270 @@ public class ExpenseService : IExpenseService
         _cacheService = cacheService;
     }
 
-    public async Task<DashboardViewModel?> GetDashboardAsync()
+    public async Task<ApiResult<DashboardViewModel>> GetDashboardAsync()
     {
-        var cached = await _cacheService.GetAsync<DashboardViewModel>(DASHBOARD_KEY);
-        if (cached != null) return cached;
-
-        var response = await _httpClient.GetAsync("api/v1/expenses/dashboard");
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var result = await response.Content.ReadFromJsonAsync<Response<DashboardViewModel>>();
-            if (result?.Data != null)
+            var cached = await _cacheService.GetAsync<DashboardViewModel>(DASHBOARD_KEY);
+            if (cached != null) return ApiResult<DashboardViewModel>.Success(cached);
+
+            var response = await _httpClient.GetAsync("api/v1/expenses/dashboard");
+            if (response.IsSuccessStatusCode)
             {
-                await _cacheService.SetAsync(DASHBOARD_KEY, result.Data, TimeSpan.FromMinutes(2));
-                return result.Data;
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<DashboardViewModel>>();
+                if (result != null && result.Succeeded && result.Data != null)
+                {
+                    await _cacheService.SetAsync(DASHBOARD_KEY, result.Data, TimeSpan.FromMinutes(2));
+                    return result;
+                }
+                return result ?? ApiResult<DashboardViewModel>.Failure("Respuesta inválida del servidor.");
             }
+            return ApiResult<DashboardViewModel>.Failure($"Error del servidor: {response.StatusCode}");
         }
-        
-        return null;
+        catch (Exception ex)
+        {
+            return ApiResult<DashboardViewModel>.Failure($"Error de conexión: {ex.Message}");
+        }
     }
 
-    public async Task<List<GroupSummaryViewModel>> GetUserGroupsAsync()
+    public async Task<ApiResult<List<GroupSummaryViewModel>>> GetUserGroupsAsync()
     {
         try
         {
             var cached = await _cacheService.GetAsync<List<GroupSummaryViewModel>>(GROUPS_KEY);
-            if (cached != null) return cached;
+            if (cached != null) return ApiResult<List<GroupSummaryViewModel>>.Success(cached);
 
             var response = await _httpClient.GetAsync("api/v1/groups");
             
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<List<GroupSummaryViewModel>>>();
-                var data = result?.Data ?? new List<GroupSummaryViewModel>();
-                if (data.Any())
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<List<GroupSummaryViewModel>>>();
+                if (result != null && result.Succeeded && result.Data != null)
                 {
-                    await _cacheService.SetAsync(GROUPS_KEY, data, TimeSpan.FromMinutes(5));
+                    if (result.Data.Any())
+                    {
+                        await _cacheService.SetAsync(GROUPS_KEY, result.Data, TimeSpan.FromMinutes(5));
+                    }
+                    return result;
                 }
-                return data;
+                return result ?? ApiResult<List<GroupSummaryViewModel>>.Failure("Error al obtener grupos.");
             }
+            return ApiResult<List<GroupSummaryViewModel>>.Failure($"Error del servidor: {response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            return ApiResult<List<GroupSummaryViewModel>>.Failure($"Error de conexión: {ex.Message}");
+        }
+    }
+
+    public async Task<ApiResult> CreateExpenseAsync(CreateExpenseModel expense)
+    {
+        try 
+        {
+            var request = new 
+            {
+                Title = expense.Title,
+                TotalAmount = expense.TotalAmount,
+                GroupId = expense.GroupId,
+                CategoryId = expense.CategoryId,
+                Currency = expense.Currency,
+                Date = expense.Date,
+                Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
+                Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("api/v1/expenses", request);
             
-            return new List<GroupSummaryViewModel>();
+            if (response.IsSuccessStatusCode)
+            {
+                await InvalidateMainCache();
+                return ApiResult.Success();
+            }
+            return ApiResult.Failure("Error al crear el gasto.");
         }
-        catch
+        catch (Exception ex)
         {
-            return new List<GroupSummaryViewModel>();
+            return ApiResult.Failure(ex.Message);
         }
     }
 
-    public async Task<bool> CreateExpenseAsync(CreateExpenseModel expense)
+    public async Task<ApiResult> CreateGroupAsync(string name, List<MemberSpendRecordViewModel> initialMembers)
     {
-        var request = new 
+        try 
         {
-            Title = expense.Title,
-            TotalAmount = expense.TotalAmount,
-            GroupId = expense.GroupId,
-            CategoryId = expense.CategoryId,
-            Currency = expense.Currency,
-            Date = expense.Date,
-            Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
-            Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
-        };
-
-        var response = await _httpClient.PostAsJsonAsync("api/v1/expenses", request);
-        
-        if (response.IsSuccessStatusCode)
-        {
-            await InvalidateMainCache();
+            var request = new 
+            { 
+                Name = name, 
+                InitialMembers = initialMembers.Select(m => new { Email = m.Email, AmountSpent = m.AmountSpent }).ToList() 
+            };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/groups", request);
+            
+            if (response.IsSuccessStatusCode) 
+            {
+                await InvalidateMainCache();
+                return ApiResult.Success();
+            }
+            return ApiResult.Failure("Error al crear el grupo.");
         }
-        
-        return response.IsSuccessStatusCode;
+        catch (Exception ex)
+        {
+            return ApiResult.Failure(ex.Message);
+        }
     }
 
-    public async Task<bool> CreateGroupAsync(string name, List<MemberSpendRecordViewModel> initialMembers)
-    {
-        var request = new 
-        { 
-            Name = name, 
-            InitialMembers = initialMembers.Select(m => new { Email = m.Email, AmountSpent = m.AmountSpent }).ToList() 
-        };
-        var response = await _httpClient.PostAsJsonAsync("api/v1/groups", request);
-        if (response.IsSuccessStatusCode) await InvalidateMainCache();
-        return response.IsSuccessStatusCode;
-    }
-
-    public async Task<List<GroupMemberResponse>> GetGroupMembersAsync(string groupId)
+    public async Task<ApiResult<List<GroupMemberResponse>>> GetGroupMembersAsync(string groupId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"api/v1/groups/{groupId}/members");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<List<GroupMemberResponse>>>();
-                return result?.Data ?? new List<GroupMemberResponse>();
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<List<GroupMemberResponse>>>();
+                return result ?? ApiResult<List<GroupMemberResponse>>.Failure("Error al obtener miembros.");
             }
-            return new List<GroupMemberResponse>();
+            return ApiResult<List<GroupMemberResponse>>.Failure("Error de servidor.");
         }
-        catch
+        catch (Exception ex)
         {
-            return new List<GroupMemberResponse>();
+            return ApiResult<List<GroupMemberResponse>>.Failure(ex.Message);
         }
     }
 
-    public async Task<List<BalanceResponse>> GetGroupBalancesAsync(string groupId)
+    public async Task<ApiResult<List<BalanceResponse>>> GetGroupBalancesAsync(string groupId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"api/v1/expenses/{groupId}/balances");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<List<BalanceResponse>>>();
-                return result?.Data ?? new List<BalanceResponse>();
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<List<BalanceResponse>>>();
+                return result ?? ApiResult<List<BalanceResponse>>.Failure("Error al obtener balances.");
             }
-            return new List<BalanceResponse>();
+            return ApiResult<List<BalanceResponse>>.Failure("Error de servidor.");
         }
-        catch
+        catch (Exception ex)
         {
-            return new List<BalanceResponse>();
+            return ApiResult<List<BalanceResponse>>.Failure(ex.Message);
         }
     }
 
-    public async Task<GroupSpendingBreakdownViewModel?> GetGroupSpendingBreakdownAsync(string groupId)
+    public async Task<ApiResult<GroupSpendingBreakdownViewModel>> GetGroupSpendingBreakdownAsync(string groupId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"api/v1/groups/{groupId}/breakdown");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<GroupSpendingBreakdownViewModel>>();
-                return result?.Data;
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<GroupSpendingBreakdownViewModel>>();
+                return result ?? ApiResult<GroupSpendingBreakdownViewModel>.Failure("Error al obtener desglose.");
             }
-            return null;
+            return ApiResult<GroupSpendingBreakdownViewModel>.Failure("Error de servidor.");
         }
-        catch
+        catch (Exception ex)
         {
-            return null;
+            return ApiResult<GroupSpendingBreakdownViewModel>.Failure(ex.Message);
         }
     }
 
-    public async Task<ExpenseDetailViewModel?> GetExpenseDetailsAsync(Guid expenseId)
+    public async Task<ApiResult<ExpenseDetailViewModel>> GetExpenseDetailsAsync(Guid expenseId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"api/v1/expenses/{expenseId}");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<ExpenseDetailViewModel>>();
-                return result?.Data;
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<ExpenseDetailViewModel>>();
+                return result ?? ApiResult<ExpenseDetailViewModel>.Failure("Error al obtener detalles.");
             }
-            return null;
+            return ApiResult<ExpenseDetailViewModel>.Failure("Gasto no encontrado.");
         }
-        catch
+        catch (Exception ex)
         {
-            return null;
+            return ApiResult<ExpenseDetailViewModel>.Failure(ex.Message);
         }
     }
 
-    public async Task<bool> SettleDebtAsync(SettleDebtModel settlement)
+    public async Task<ApiResult> SettleDebtAsync(SettleDebtModel settlement)
     {
-        var wrap = new { request = settlement };
-        var response = await _httpClient.PostAsJsonAsync("api/v1/groups/settle", wrap);
-        return response.IsSuccessStatusCode;
-    }
-
-    public async Task<bool> UpdateExpenseAsync(Guid id, CreateExpenseModel expense)
-    {
-        var request = new 
+        try 
         {
-            Id = id,
-            Title = expense.Title,
-            TotalAmount = expense.TotalAmount,
-            GroupId = expense.GroupId,
-            CategoryId = expense.CategoryId,
-            Currency = expense.Currency,
-            Date = expense.Date,
-            Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
-            Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
-        };
-
-        var response = await _httpClient.PutAsJsonAsync($"api/v1/expenses/{id}", request);
-        if (response.IsSuccessStatusCode) await InvalidateMainCache();
-        return response.IsSuccessStatusCode;
+            var wrap = new { request = settlement };
+            var response = await _httpClient.PostAsJsonAsync("api/v1/groups/settle", wrap);
+            if (response.IsSuccessStatusCode) return ApiResult.Success();
+            return ApiResult.Failure("Error al saldar la deuda.");
+        }
+        catch (Exception ex) { return ApiResult.Failure(ex.Message); }
     }
 
-    public async Task<bool> DeleteExpenseAsync(Guid id)
+    public async Task<ApiResult> UpdateExpenseAsync(Guid id, CreateExpenseModel expense)
     {
-        var response = await _httpClient.DeleteAsync($"api/v1/expenses/{id}");
-        if (response.IsSuccessStatusCode) await InvalidateMainCache();
-        return response.IsSuccessStatusCode;
+        try 
+        {
+            var request = new 
+            {
+                Id = id,
+                Title = expense.Title,
+                TotalAmount = expense.TotalAmount,
+                GroupId = expense.GroupId,
+                CategoryId = expense.CategoryId,
+                Currency = expense.Currency,
+                Date = expense.Date,
+                Splits = expense.Splits.Select(s => new { UserId = s.UserId, SplitType = (int)expense.SelectedSplitType, SplitValue = s.Amount }).ToList(),
+                Payments = expense.Payments.Select(p => new { UserId = p.UserId, AmountPaid = p.Amount }).ToList()
+            };
+
+            var response = await _httpClient.PutAsJsonAsync($"api/v1/expenses/{id}", request);
+            if (response.IsSuccessStatusCode) 
+            {
+                await InvalidateMainCache();
+                return ApiResult.Success();
+            }
+            return ApiResult.Failure("Error al actualizar gasto.");
+        }
+        catch (Exception ex) { return ApiResult.Failure(ex.Message); }
     }
 
-    public async Task<List<CategoryDto>> GetCategoriesAsync()
+    public async Task<ApiResult> DeleteExpenseAsync(Guid id)
+    {
+        try 
+        {
+            var response = await _httpClient.DeleteAsync($"api/v1/expenses/{id}");
+            if (response.IsSuccessStatusCode) 
+            {
+                await InvalidateMainCache();
+                return ApiResult.Success();
+            }
+            return ApiResult.Failure("Error al eliminar gasto.");
+        }
+        catch (Exception ex) { return ApiResult.Failure(ex.Message); }
+    }
+
+    public async Task<ApiResult<List<CategoryDto>>> GetCategoriesAsync()
     {
         try
         {
             var cached = await _cacheService.GetAsync<List<CategoryDto>>(CATEGORIES_KEY);
-            if (cached != null) return cached;
+            if (cached != null) return ApiResult<List<CategoryDto>>.Success(cached);
 
             var response = await _httpClient.GetAsync("api/v1/categories");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<List<CategoryDto>>>();
-                var data = result?.Data ?? new List<CategoryDto>();
-                if (data.Any())
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<List<CategoryDto>>>();
+                if (result != null && result.Succeeded && result.Data != null)
                 {
-                    await _cacheService.SetAsync(CATEGORIES_KEY, data, TimeSpan.FromHours(24), persist: true);
+                    if (result.Data.Any())
+                    {
+                        await _cacheService.SetAsync(CATEGORIES_KEY, result.Data, TimeSpan.FromHours(24), persist: true);
+                    }
+                    return result;
                 }
-                return data;
+                return ApiResult<List<CategoryDto>>.Failure("Error al obtener categorías.");
             }
-            return new List<CategoryDto>();
+            return ApiResult<List<CategoryDto>>.Failure("Error de servidor.");
         }
-        catch
+        catch (Exception ex)
         {
-            return new List<CategoryDto>();
+            return ApiResult<List<CategoryDto>>.Failure(ex.Message);
         }
     }
 
@@ -242,92 +294,105 @@ public class ExpenseService : IExpenseService
         await _cacheService.RemoveAsync(GROUPS_KEY);
     }
 
-    public async Task<ExpenseAuditViewModel?> GetExpenseAuditAsync(Guid expenseId)
+    public async Task<ApiResult<ExpenseAuditViewModel>> GetExpenseAuditAsync(Guid expenseId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"api/v1/expenses/{expenseId}/audit");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<ExpenseAuditViewModel>>();
-                return result?.Data;
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<ExpenseAuditViewModel>>();
+                return result ?? ApiResult<ExpenseAuditViewModel>.Failure("Error al obtener auditoría.");
             }
-            return null;
+            return ApiResult<ExpenseAuditViewModel>.Failure("Error de servidor.");
         }
-        catch { return null; }
+        catch (Exception ex) { return ApiResult<ExpenseAuditViewModel>.Failure(ex.Message); }
     }
 
-    public async Task<GroupSpendingSummaryViewModel?> GetGroupSpendingSummaryAsync(Guid groupId)
+    public async Task<ApiResult<GroupSpendingSummaryViewModel>> GetGroupSpendingSummaryAsync(Guid groupId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"api/v1/expenses/groups/{groupId}/summary");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<GroupSpendingSummaryViewModel>>();
-                return result?.Data;
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<GroupSpendingSummaryViewModel>>();
+                return result ?? ApiResult<GroupSpendingSummaryViewModel>.Failure("Error al obtener resumen.");
             }
-            return null;
+            return ApiResult<GroupSpendingSummaryViewModel>.Failure("Error de servidor.");
         }
-        catch { return null; }
+        catch (Exception ex) { return ApiResult<GroupSpendingSummaryViewModel>.Failure(ex.Message); }
     }
 
-    public async Task<byte[]?> ExportGroupReportAsync(Guid groupId)
+    public async Task<ApiResult<byte[]>> ExportGroupReportAsync(Guid groupId)
     {
         try
         {
             var response = await _httpClient.GetAsync($"api/v1/expenses/groups/{groupId}/export");
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadAsByteArrayAsync();
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                return ApiResult<byte[]>.Success(bytes);
             }
-            return null;
+            return ApiResult<byte[]>.Failure("Error al exportar reporte.");
         }
-        catch { return null; }
+        catch (Exception ex) { return ApiResult<byte[]>.Failure(ex.Message); }
     }
 
-    public async Task<bool> UpdateGroupAsync(Guid id, string name, List<MemberSpendRecordViewModel> members)
+    public async Task<ApiResult> UpdateGroupAsync(Guid id, string name, List<MemberSpendRecordViewModel> members)
     {
-        var request = new 
-        { 
-            Id = id,
-            Name = name, 
-            Members = members.Select(m => new { Email = m.Email }).ToList()
-        };
-        var response = await _httpClient.PutAsJsonAsync($"api/v1/groups/{id}", request);
-        if (response.IsSuccessStatusCode) await InvalidateMainCache();
-        return response.IsSuccessStatusCode;
+        try 
+        {
+            var request = new 
+            { 
+                Id = id,
+                Name = name, 
+                Members = members.Select(m => new { Email = m.Email }).ToList()
+            };
+            var response = await _httpClient.PutAsJsonAsync($"api/v1/groups/{id}", request);
+            if (response.IsSuccessStatusCode) 
+            {
+                await InvalidateMainCache();
+                return ApiResult.Success();
+            }
+            return ApiResult.Failure("Error al actualizar grupo.");
+        }
+        catch (Exception ex) { return ApiResult.Failure(ex.Message); }
     }
 
-    public async Task<bool> DeleteGroupAsync(Guid id)
+    public async Task<ApiResult> DeleteGroupAsync(Guid id)
     {
         try
         {
             var response = await _httpClient.DeleteAsync($"api/v1/groups/{id}");
-            if (response.IsSuccessStatusCode) await InvalidateMainCache();
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode) 
+            {
+                await InvalidateMainCache();
+                return ApiResult.Success();
+            }
+            return ApiResult.Failure("Error al eliminar grupo.");
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return ApiResult.Failure(ex.Message);
         }
     }
 
-    public async Task<List<SettlementViewModel>> GetMySettlementsAsync()
+    public async Task<ApiResult<List<SettlementViewModel>>> GetMySettlementsAsync()
     {
         try
         {
             var response = await _httpClient.GetAsync("api/v1/user/me/settlements");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<Response<List<SettlementViewModel>>>();
-                return result?.Data ?? new List<SettlementViewModel>();
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<List<SettlementViewModel>>>();
+                return result ?? ApiResult<List<SettlementViewModel>>.Failure("Error al obtener deudas.");
             }
-            return new List<SettlementViewModel>();
+            return ApiResult<List<SettlementViewModel>>.Failure("Error de servidor.");
         }
-        catch
+        catch (Exception ex)
         {
-            return new List<SettlementViewModel>();
+            return ApiResult<List<SettlementViewModel>>.Failure(ex.Message);
         }
     }
 }

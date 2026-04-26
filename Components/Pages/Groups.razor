@@ -293,7 +293,8 @@
     private async Task LoadGroups()
     {
         isLoading = true;
-        groups = await ExpenseService.GetUserGroupsAsync();
+        var result = await ExpenseService.GetUserGroupsAsync();
+        groups = result.Succeeded ? result.Data : new List<GroupSummaryViewModel>();
         isLoading = false;
         StateHasChanged();
     }
@@ -313,16 +314,16 @@
             var balancesTask = ExpenseService.GetGroupBalancesAsync(group.Id);
             var summaryTask = isPremium 
                 ? ExpenseService.GetGroupSpendingSummaryAsync(Guid.Parse(group.Id)) 
-                : Task.FromResult<GroupSpendingSummaryViewModel?>(null);
+                : Task.FromResult(ApiResult<GroupSpendingSummaryViewModel>.Failure("Premium required"));
 
             await Task.WhenAll(breakdownTask, membersTask, balancesTask, summaryTask);
             
-            breakdown = breakdownTask.Result;
-            members = membersTask.Result;
-            balances = balancesTask.Result;
-            spendingSummary = summaryTask.Result;
+            breakdown = breakdownTask.Result.Succeeded ? breakdownTask.Result.Data : null;
+            members = membersTask.Result.Succeeded ? membersTask.Result.Data : new List<GroupMemberResponse>();
+            balances = balancesTask.Result.Succeeded ? balancesTask.Result.Data : new List<BalanceResponse>();
+            spendingSummary = summaryTask.Result?.Succeeded == true ? summaryTask.Result.Data : null;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             ModalService.ShowModal("Error", "No se pudieron obtener los detalles.", ModalType.Error);
         }
@@ -340,12 +341,16 @@
         exporting = true;
         try
         {
-            var data = await ExpenseService.ExportGroupReportAsync(Guid.Parse(selectedGroup.Id));
-            if (data != null)
+            var result = await ExpenseService.ExportGroupReportAsync(Guid.Parse(selectedGroup.Id));
+            if (result.Succeeded && result.Data != null)
             {
                 var fileName = $"Reporte_{selectedGroup.Name}_{DateTime.Now:yyyyMMdd}.xlsx";
-                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Convert.ToBase64String(data));
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Convert.ToBase64String(result.Data));
                 ToastService.ShowToast("Reporte descargado 📄", ToastLevel.Success);
+            }
+            else
+            {
+                ToastService.ShowToast(result.Message ?? "Error al exportar", ToastLevel.Error);
             }
         }
         finally
@@ -404,12 +409,16 @@
         bool confirmed = await ModalService.ShowConfirmAsync("Eliminar Grupo", $"¿Borrar '{selectedGroup.Name}'? Esta acción es irreversible.", ModalType.Warning);
         if (confirmed)
         {
-            var success = await ExpenseService.DeleteGroupAsync(Guid.Parse(selectedGroup.Id));
-            if (success)
+            var result = await ExpenseService.DeleteGroupAsync(Guid.Parse(selectedGroup.Id));
+            if (result.Succeeded)
             {
                 ToastService.ShowToast("Grupo eliminado 🗑️", ToastLevel.Success);
                 CloseDetails();
                 await LoadGroups();
+            }
+            else
+            {
+                ToastService.ShowToast(result.Message ?? "Error al eliminar grupo", ToastLevel.Error);
             }
         }
     }

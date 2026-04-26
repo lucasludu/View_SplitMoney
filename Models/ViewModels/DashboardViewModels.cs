@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace SplitMoney.Client.Models.ViewModels;
 
 public class DashboardViewModel
@@ -56,11 +58,22 @@ public enum SplitType
 
 public class CreateExpenseModel
 {
+    [Required(ErrorMessage = "La descripción es obligatoria.")]
+    [StringLength(100, ErrorMessage = "La descripción no puede exceder los 100 caracteres.")]
     public string Title { get; set; } = string.Empty;
+
+    [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a 0.")]
     public decimal TotalAmount { get; set; }
+
+    [Required(ErrorMessage = "Debes seleccionar un grupo.")]
     public string GroupId { get; set; } = string.Empty;
+
     public Guid? CategoryId { get; set; }
+    
+    [Required]
     public string Currency { get; set; } = "ARS";
+    
+    [Required]
     public DateTime Date { get; set; } = DateTime.Now;
     public SplitType SelectedSplitType { get; set; } = SplitType.Equal;
     public List<ExpenseSplitViewModel> Splits { get; set; } = new();
@@ -94,7 +107,10 @@ public class GroupSummaryViewModel
 
 public class MemberSpendRecordViewModel
 {
+    [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
+    [EmailAddress(ErrorMessage = "Formato de correo inválido.")]
     public string Email { get; set; } = string.Empty;
+    
     public decimal AmountSpent { get; set; }
 }
 
@@ -116,10 +132,18 @@ public class BalanceResponse
 
 public class SettleDebtModel
 {
+    [Required]
     public Guid GroupId { get; set; }
+
+    [Required(ErrorMessage = "Debe especificar a quién se le paga.")]
     public string PayeeId { get; set; } = string.Empty; // A quién se le paga
+
+    [Range(0.01, double.MaxValue, ErrorMessage = "El monto a saldar debe ser mayor a 0.")]
     public decimal Amount { get; set; }
+
+    [Required]
     public string Currency { get; set; } = "ARS";
+
     public DateTime Date { get; set; } = DateTime.Now;
 }
 

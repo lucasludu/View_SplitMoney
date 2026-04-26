@@ -24,7 +24,7 @@ namespace SplitMoney.Client.Services
             _cacheService = cacheService;
         }
 
-        public async Task<Response<LoginResponse>> Login(LoginRequest loginRequest)
+        public async Task<ApiResult<LoginResponse>> Login(LoginRequest loginRequest)
         {
             try 
             {
@@ -32,7 +32,7 @@ namespace SplitMoney.Client.Services
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
+                    var result = await response.Content.ReadFromJsonAsync<ApiResult<LoginResponse>>();
                     if (result != null && result.Succeeded)
                     {
                         await SecureStorage.Default.SetAsync("authToken", result.Data!.Token);
@@ -43,17 +43,17 @@ namespace SplitMoney.Client.Services
                         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", result.Data.Token);
                         return result;
                     }
-                    return result ?? new Response<LoginResponse> { Succeeded = false, Message = "Respuesta vacía del servidor." };
+                    return result ?? new ApiResult<LoginResponse> { Succeeded = false, Message = "Respuesta vacía del servidor." };
                 }
                 else 
                 {
-                    var errorResult = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
-                    return errorResult ?? new Response<LoginResponse> { Succeeded = false, Message = $"Error del servidor: {response.StatusCode}" };
+                    var errorResult = await response.Content.ReadFromJsonAsync<ApiResult<LoginResponse>>();
+                    return errorResult ?? new ApiResult<LoginResponse> { Succeeded = false, Message = $"Error del servidor: {response.StatusCode}" };
                 }
             }
             catch (Exception ex)
             {
-                return new Response<LoginResponse> { Succeeded = false, Message = $"Error de conexión: {ex.Message}" };
+                return new ApiResult<LoginResponse> { Succeeded = false, Message = $"Error de conexión: {ex.Message}" };
             }
         }
 
@@ -95,17 +95,17 @@ namespace SplitMoney.Client.Services
             }
         }
 
-        public async Task<Response<string>> Register(RegisterUserRequest registerRequest)
+        public async Task<ApiResult<string>> Register(RegisterUserRequest registerRequest)
         {
             try 
             {
                 var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/register", registerRequest);
-                var result = await response.Content.ReadFromJsonAsync<Response<string>>();
-                return result ?? new Response<string> { Succeeded = false, Message = "Error al procesar el registro." };
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
+                return result ?? new ApiResult<string> { Succeeded = false, Message = "Error al procesar el registro." };
             }
             catch (Exception ex)
             {
-                return new Response<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+                return new ApiResult<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
             }
         }
 
@@ -126,7 +126,7 @@ namespace SplitMoney.Client.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
+                    var result = await response.Content.ReadFromJsonAsync<ApiResult<LoginResponse>>();
                     if (result != null && result.Succeeded)
                     {
                         await SecureStorage.Default.SetAsync("authToken", result.Data!.Token);
@@ -146,25 +146,25 @@ namespace SplitMoney.Client.Services
             await Logout();
             return string.Empty;
         }
-        public async Task<Response<UserDto>> GetProfile()
+        public async Task<ApiResult<UserDto>> GetProfile()
         {
             try 
             {
                 var response = await _httpClient.GetAsync("api/v1/User/me");
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<Response<UserDto>>();
-                    return result ?? new Response<UserDto> { Succeeded = false, Message = "Perfil no encontrado." };
+                    var result = await response.Content.ReadFromJsonAsync<ApiResult<UserDto>>();
+                    return result ?? new ApiResult<UserDto> { Succeeded = false, Message = "Perfil no encontrado." };
                 }
-                return new Response<UserDto> { Succeeded = false, Message = "Error al obtener el perfil." };
+                return new ApiResult<UserDto> { Succeeded = false, Message = "Error al obtener el perfil." };
             }
             catch (Exception ex)
             {
-                return new Response<UserDto> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+                return new ApiResult<UserDto> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
             }
         }
 
-        public async Task<Response<string>> UpdateProfile(UserDto userUpdate)
+        public async Task<ApiResult<string>> UpdateProfile(UserDto userUpdate)
         {
             try 
             {
@@ -172,12 +172,71 @@ namespace SplitMoney.Client.Services
                 // Se intenta usar api/v1/User/me si fuera un PUT para actualizar, 
                 // o se deja la ruta actual por si se añade en el futuro.
                 var response = await _httpClient.PutAsJsonAsync("api/v1/User/me", userUpdate);
-                var result = await response.Content.ReadFromJsonAsync<Response<string>>();
-                return result ?? new Response<string> { Succeeded = false, Message = "Error al actualizar el perfil." };
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
+                return result ?? new ApiResult<string> { Succeeded = false, Message = "Error al actualizar el perfil." };
             }
             catch (Exception ex)
             {
-                return new Response<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+                return new ApiResult<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+            }
+        }
+
+        public async Task<bool> IsPremiumAsync()
+        {
+            try
+            {
+                var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                
+                // Real check
+                if (user.Identity?.IsAuthenticated == true && user.IsInRole("PremiumUser"))
+                    return true;
+
+                // Simulation check
+                return await _localStorage.GetItemAsync<bool>("is_simulated_premium");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task SimulatePremiumAsync()
+        {
+            try
+            {
+                await _localStorage.SetItemAsync("is_simulated_premium", true);
+            }
+            catch
+            {
+                // Ignore JS errors
+            }
+        }
+        public async Task<ApiResult<string>> ForgotPassword(string email)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/forgot-password", new ForgotPasswordRequest { Email = email });
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
+                return result ?? new ApiResult<string> { Succeeded = false, Message = "Error al procesar la solicitud." };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResult<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
+            }
+        }
+    
+        public async Task<ApiResult<string>> ResetPassword(ResetPasswordRequest resetRequest)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/v1/Auth/reset-password", resetRequest);
+                var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
+                return result ?? new ApiResult<string> { Succeeded = false, Message = "Error al restablecer la contraseña." };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResult<string> { Succeeded = false, Message = $"Error de red: {ex.Message}" };
             }
         }
     }

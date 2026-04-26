@@ -202,3 +202,185 @@ h1, h2, h3, .brand-font {
 .premium-modal-anim {
     animation: glass-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Modal & Overlay System */
+.details-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+@media (min-width: 768px) {
+    .details-overlay {
+        align-items: center;
+        padding: 2rem;
+    }
+}
+
+.details-panel {
+    width: 100%;
+    max-width: 600px;
+    background: var(--surface);
+    border-radius: 2rem 2rem 0 0;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--outline-variant);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+    animation: editorial-slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+    .details-panel {
+        border-radius: 2.5rem;
+    }
+}
+
+@keyframes editorial-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.panel-header {
+    padding: 1.5rem 2rem;
+    background: var(--surface-container-lowest);
+    border-radius: 2rem 2rem 0 0;
+}
+
+@media (min-width: 768px) {
+    .panel-header {
+        border-radius: 2.5rem 2.5rem 0 0;
+    }
+}
+
+.panel-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--on-surface);
+}
+
+.panel-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface-container-high);
+    color: var(--on-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.panel-close-btn:hover {
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+    transform: rotate(90deg);
+}
+
+/* Premium Input System */
+.premium-input-group {
+    position: relative;
+    width: 100%;
+}
+
+.premium-input-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-surface-variant);
+    margin-bottom: 0.6rem;
+    margin-left: 0.5rem;
+    opacity: 0.8;
+}
+
+.premium-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--surface-container);
+    border-radius: 1.25rem;
+    border: 1px solid var(--outline-variant);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-input-wrapper:focus-within {
+    background: var(--surface-container-high);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    transform: translateY(-1px);
+}
+
+.premium-input-icon {
+    position: absolute;
+    left: 1.25rem;
+    color: var(--primary);
+    font-size: 1.4rem;
+    opacity: 0.6;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.premium-input {
+    width: 100%;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 1.25rem;
+    padding: 1.1rem 1.25rem 1.1rem 3.5rem !important;
+    color: var(--on-surface) !important;
+    font-size: 1rem;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.premium-input::placeholder {
+    color: var(--on-surface-variant);
+    opacity: 0.3;
+}
+
+.premium-input-wrapper.readonly {
+    background: var(--surface-container-lowest);
+    opacity: 0.6;
+    border-style: dashed;
+    cursor: not-allowed;
+}
+
+.premium-input-wrapper.readonly .premium-input {
+    cursor: not-allowed;
+}
+
+.premium-input-wrapper.readonly .premium-input-icon {
+    color: var(--on-surface-variant);
+}
+
+/* Hero Avatar System */
+.editorial-avatar-hero {
+    width: 120px !important;
+    height: 120px !important;
+    background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+    color: white !important;
+    border-radius: 2.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 4.5rem !important;
+    font-weight: 900 !important;
+    box-shadow: 0 15px 45px rgba(37, 99, 235, 0.4) !important;
+    border: 4px solid var(--surface-container-low) !important;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    user-select: none !important;
+}

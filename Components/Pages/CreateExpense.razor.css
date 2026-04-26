@@ -165,6 +165,33 @@
 }
 .split-toggle-btn.active { background: var(--primary); color: white; }
 
+.btn-text-action {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 100px;
+    padding: 0.4rem 1rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    outline: none;
+}
+
+.btn-text-action:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-text-action:active {
+    transform: translateY(0);
+}
+
 /* Summary sticky card */
 .summary-sticky-card {
     position: sticky; top: 2rem; background: var(--surface-container-low);
