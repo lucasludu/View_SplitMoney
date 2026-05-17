@@ -1,6 +1,4 @@
-@using SplitMoney.Client.Services
 @implements IDisposable
-@inject IToastService ToastService
 
 <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x mb-4 px-3" style="z-index: 9999; pointer-events: none;">
     <div class="toast-item @(isVisible ? "show" : "") @LevelClass" style="pointer-events: auto;">
@@ -42,46 +40,4 @@
     .toast-message { font-weight: 500; font-size: 0.95rem; }
 </style>
 
-@code {
-    private bool isVisible = false;
 
-    protected override void OnInitialized()
-    {
-        ToastService.OnShow += ShowToast;
-        ToastService.OnHide += HideToast;
-    }
-
-    private void ShowToast()
-    {
-        isVisible = true;
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HideToast()
-    {
-        isVisible = false;
-        InvokeAsync(StateHasChanged);
-    }
-
-    private string LevelClass => ToastService.Level switch
-    {
-        ToastLevel.Success => "success",
-        ToastLevel.Error => "error",
-        ToastLevel.Warning => "warning",
-        _ => "info"
-    };
-
-    private string Icon => ToastService.Level switch
-    {
-        ToastLevel.Success => "✅",
-        ToastLevel.Error => "⚠️",
-        ToastLevel.Warning => "🚨",
-        _ => "ℹ️"
-    };
-
-    public void Dispose()
-    {
-        ToastService.OnShow -= ShowToast;
-        ToastService.OnHide -= HideToast;
-    }
-}

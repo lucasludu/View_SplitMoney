@@ -1,4 +1,3 @@
-@inject IJSRuntime JSRuntime
 
 <div class="paywall-overlay" @onclick="OnClose">
     <div class="paywall-card glass-panel shadow-lg premium-modal-anim" @onclick:stopPropagation="true">
@@ -60,22 +59,3 @@
         }
     </div>
 </div>
-
-@code {
-    [Parameter] public string Title { get; set; } = "Límite Alcanzado";
-    [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public EventCallback OnUpgrade { get; set; }
-    [Parameter] public EventCallback OnSimulate { get; set; }
-
-    private async Task HandleUpgrade()
-    {
-        await OnUpgrade.InvokeAsync();
-        await OnClose.InvokeAsync();
-    }
-
-    private async Task HandleSimulate()
-    {
-        await OnSimulate.InvokeAsync();
-        await OnClose.InvokeAsync();
-    }
-}

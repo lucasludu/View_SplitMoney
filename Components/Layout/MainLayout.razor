@@ -1,6 +1,5 @@
 @inherits LayoutComponentBase
 @using SplitMoney.Client.Components.UI
-@inject NavigationManager Navigation
 
 <div class="app-container">
     <div class="sidebar">
@@ -115,22 +114,3 @@
     }
 </style>
 
-@code {
-    private ErrorBoundary? errorBoundary;
-
-    protected override void OnParametersSet()
-    {
-        // On navigation, recover from previous errors
-        errorBoundary?.Recover();
-    }
-
-    private void Recover()
-    {
-        errorBoundary?.Recover();
-    }
-
-    private void ReloadPage()
-    {
-        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
-    }
-}

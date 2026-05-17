@@ -1,4 +1,3 @@
-@inject NavigationManager Navigation
 
 <div class="stats-container flex-nowrap overflow-auto pb-3 mb-4">
     <!-- Card: Te Deben -->
@@ -172,10 +171,3 @@
     }
 </style>
 
-@code {
-    [Parameter] public decimal TeDeben { get; set; }
-    [Parameter] public decimal Debes { get; set; }
-    [Parameter] public decimal TotalMes { get; set; }
-
-    private void NavigateToSettle() => Navigation.NavigateTo("/settle");
-}
