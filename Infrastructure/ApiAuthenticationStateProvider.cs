@@ -18,9 +18,7 @@ namespace SplitMoney.Client.Infrastructure
         {
             try
             {
-                Console.WriteLine("AUTH: Checking SecureStorage for token...");
                 var savedToken = await SecureStorage.Default.GetAsync("authToken");
-                Console.WriteLine("AUTH: Token retrieval attempt finished.");
 
                 if (string.IsNullOrWhiteSpace(savedToken))
                 {
@@ -33,7 +31,6 @@ namespace SplitMoney.Client.Infrastructure
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"AUTH ERROR: {ex.Message}");
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
             }
         }

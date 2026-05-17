@@ -1,5 +1,3 @@
-using System.Net.Security;
-
 namespace SplitMoney.Client.Infrastructure
 {
     public class DevelopmentHttpClientHandler : HttpClientHandler

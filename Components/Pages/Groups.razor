@@ -181,31 +181,40 @@
                         <div class="member-list">
                             @foreach (var m in breakdown.Members)
                             {
+                                var displayName = GetMemberDisplayName(m.UserId, m.FullName);
                                 <div class="member-card @(m.NetBalance > 0 ? "positive" : m.NetBalance < 0 ? "negative" : "neutral")">
                                     <div class="member-info">
                                         <div class="member-avatar">
-                                            @m.FullName.Substring(0, 1).ToUpper()
+                                            @(string.IsNullOrEmpty(displayName) ? "?" : displayName.Substring(0, 1).ToUpper())
                                         </div>
                                         <div class="member-text">
-                                            <p class="member-name">@m.FullName</p>
+                                            <p class="member-name">@displayName</p>
                                             <p class="member-meta">@m.TransactionCount movimientos</p>
                                         </div>
                                     </div>
-                                    <div class="member-balance">
-                                        @if (m.NetBalance > 0)
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="member-balance">
+                                            @if (m.NetBalance > 0)
+                                            {
+                                                <span class="balance-tag positive">A RECIBIR</span>
+                                                <p class="balance-value positive">+@m.NetBalance.ToString("C0")</p>
+                                            }
+                                            else if (m.NetBalance < 0)
+                                            {
+                                                <span class="balance-tag negative">DEBE</span>
+                                                <p class="balance-value negative">@m.NetBalance.ToString("C0")</p>
+                                            }
+                                            else
+                                            {
+                                                <span class="balance-tag neutral">AL DÍA</span>
+                                                <p class="balance-value neutral">$0</p>
+                                            }
+                                        </div>
+                                        @if (ShouldShowInviteButton(m.UserId))
                                         {
-                                            <span class="balance-tag positive">A RECIBIR</span>
-                                            <p class="balance-value positive">+@m.NetBalance.ToString("C0")</p>
-                                        }
-                                        else if (m.NetBalance < 0)
-                                        {
-                                            <span class="balance-tag negative">DEBE</span>
-                                            <p class="balance-value negative">@m.NetBalance.ToString("C0")</p>
-                                        }
-                                        else
-                                        {
-                                            <span class="balance-tag neutral">AL DÍA</span>
-                                            <p class="balance-value neutral">$0</p>
+                                            <button class="invite-share-btn" @onclick="() => CompartirEnlaceInvitacion(m.UserId)" title="Compartir invitación o recordatorio">
+                                                <span class="material-symbols-rounded">share</span>
+                                            </button>
                                         }
                                     </div>
                                 </div>
@@ -231,9 +240,9 @@
                                 {
                                     <div class="payment-card">
                                         <div class="payment-flow">
-                                            <span class="payer">@balance.DebtorName</span>
+                                            <span class="payer">@GetMemberDisplayName(balance.DebtorId, balance.DebtorName)</span>
                                             <span class="material-symbols-rounded arrow">trending_flat</span>
-                                            <span class="payee">@balance.CreditorName</span>
+                                            <span class="payee">@GetMemberDisplayName(balance.CreditorId, balance.CreditorName)</span>
                                         </div>
                                         <div class="payment-amount">
                                             @balance.Amount.ToString("C0")
@@ -279,6 +288,7 @@
     private bool isPremium = false;
     private bool showPaywall = false;
     private string paywallTitle = "Función Premium";
+    private string currentUserEmail = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -286,6 +296,7 @@
         var isRealPremium = authState.User.IsInRole("PremiumUser");
         var isSimulatedPremium = await LocalStorage.GetItemAsync<bool>("is_simulated_premium");
         isPremium = isRealPremium || isSimulatedPremium;
+        currentUserEmail = authState.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
 
         await LoadGroups();
     }
@@ -421,5 +432,95 @@
                 ToastService.ShowToast(result.Message ?? "Error al eliminar grupo", ToastLevel.Error);
             }
         }
+    }
+
+    private string GetMemberEmail(string userId)
+    {
+        return members?.FirstOrDefault(x => x.UserId == userId)?.Email ?? "";
+    }
+
+    private bool ShouldShowInviteButton(string userId)
+    {
+        var email = GetMemberEmail(userId);
+        if (string.IsNullOrEmpty(email) || email == currentUserEmail) return false;
+        
+        var member = members?.FirstOrDefault(x => x.UserId == userId);
+        if (member == null) return false;
+
+        // Unregistered (FullName == Email)
+        if (member.FullName == member.Email || string.IsNullOrEmpty(member.FullName))
+            return true;
+
+        // Registered user who owes money (can be reminded)
+        var memberBreakdown = breakdown?.Members.FirstOrDefault(x => x.UserId == userId);
+        if (memberBreakdown != null && memberBreakdown.NetBalance < 0)
+            return true;
+
+        return false;
+    }
+
+    private async Task CompartirEnlaceInvitacion(string userId)
+    {
+        var member = members?.FirstOrDefault(x => x.UserId == userId);
+        if (member == null || selectedGroup == null) return;
+
+        string mensaje;
+        var memberBreakdown = breakdown?.Members.FirstOrDefault(x => x.UserId == userId);
+        
+        if (member.FullName == member.Email || string.IsNullOrEmpty(member.FullName))
+        {
+            // Unregistered user invitation
+            mensaje = $"¡Hola! Te acabo de agregar al grupo '{selectedGroup.Name}' en SplitMoney para dividir gastos. " +
+                       $"Regístrate con tu correo ({member.Email}) para ver las cuentas y saldar balances: https://splitmoney.app/register";
+        }
+        else
+        {
+            // Registered user reminder (if they owe money)
+            if (memberBreakdown != null && memberBreakdown.NetBalance < 0)
+            {
+                mensaje = $"¡Hola {member.FullName}! Te recuerdo que en el grupo '{selectedGroup.Name}' de SplitMoney " +
+                           $"tenemos un saldo pendiente de {Math.Abs(memberBreakdown.NetBalance):C0}. ¡Pásate por la app para saldarlo! https://splitmoney.app";
+            }
+            else
+            {
+                mensaje = $"¡Hola {member.FullName}! Échale un vistazo al grupo '{selectedGroup.Name}' en SplitMoney para ver los nuevos gastos: https://splitmoney.app";
+            }
+        }
+
+        try
+        {
+            await Microsoft.Maui.ApplicationModel.DataTransfer.Share.Default.RequestAsync(new ShareTextRequest
+            {
+                Text = mensaje,
+                Title = "Compartir en SplitMoney"
+            });
+        }
+        catch (Exception)
+        {
+            ToastService.ShowToast("No se pudo abrir el menú de compartir", ToastLevel.Error);
+        }
+    }
+
+    private string GetMemberDisplayName(string userId, string currentName)
+    {
+        if (!string.IsNullOrWhiteSpace(currentName) && currentName != "Usuario desconocido" && currentName != "Unknown")
+        {
+            return currentName;
+        }
+
+        var member = members?.FirstOrDefault(x => x.UserId == userId);
+        if (member != null)
+        {
+            if (!string.IsNullOrWhiteSpace(member.FullName) && member.FullName != "Usuario desconocido" && member.FullName != "Unknown")
+            {
+                return member.FullName;
+            }
+            if (!string.IsNullOrWhiteSpace(member.Email))
+            {
+                return member.Email;
+            }
+        }
+
+        return "Invitado";
     }
 }

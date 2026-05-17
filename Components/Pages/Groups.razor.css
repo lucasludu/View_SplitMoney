@@ -256,4 +256,32 @@
     overflow: hidden;
 }
 
+/* Invite/Remind Share Button */
+.invite-share-btn {
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    color: var(--on-surface-variant);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.invite-share-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+.invite-share-btn span {
+    font-size: 1.1rem;
+}
+
 
