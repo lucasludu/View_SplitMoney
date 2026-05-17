@@ -1,8 +1,5 @@
 @page "/premium"
 @layout Components.Layout.MainLayout
-@inject NavigationManager Navigation
-@inject IToastService ToastService
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <div class="premium-page-container px-4 py-5 pb-6">
     <!-- Back Button -->
@@ -89,21 +86,3 @@
         </button>
     </div>
 </div>
-
-@code {
-    private async Task HandleUpgrade()
-    {
-        // En un escenario real, aquí se llamaría al SDK de Google Play
-        ToastService.ShowToast("Integración con Play Store pendiente: usa el botón de simulación abajo.", ToastLevel.Info);
-    }
-
-    private async Task SimulateSuccess()
-    {
-        await LocalStorage.SetItemAsync("is_simulated_premium", true);
-        ToastService.ShowToast("¡Bienvenido al nivel Premium! 🌟", ToastLevel.Success);
-        
-        // Efecto de confeti o espera
-        await Task.Delay(1500);
-        Navigation.NavigateTo("/");
-    }
-}

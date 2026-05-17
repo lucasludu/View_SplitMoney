@@ -19,8 +19,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    [Inject] NavigationManager Navigation { get; set; } = null!;
-    private void GoBack() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
-}

@@ -2,8 +2,6 @@
 @using SplitMoney.Client.Services
 @using SplitMoney.Client.Models.ViewModels
 @attribute [Authorize]
-@inject IExpenseService ExpenseService
-@inject NavigationManager Navigation
 
 <div class="expenses-wrapper">
     <div class="container-fluid px-3 py-4 p-md-5">
@@ -70,36 +68,3 @@
         }
     </div>
 </div>
-
-@code {
-    private List<RecentExpenseViewModel>? expenses;
-    private bool isLoading = true;
-    private string searchTerm = "";
-
-    private IEnumerable<RecentExpenseViewModel> FilteredExpenses => 
-        expenses?.Where(e => string.IsNullOrEmpty(searchTerm) || e.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ?? Enumerable.Empty<RecentExpenseViewModel>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        isLoading = true;
-        try
-        {
-            var result = await ExpenseService.GetDashboardAsync();
-            if (result.Succeeded)
-            {
-                expenses = result.Data?.RecentExpenses?.ToList();
-            }
-        }
-        finally { isLoading = false; }
-    }
-
-    private void GoBack() => Navigation.NavigateTo("/");
-    private void NavigateToDetail(Guid id) => Navigation.NavigateTo($"/expenses/detail/{id}"); // Placeholder logic or trigger home overlay if needed
-
-    private string GetCategoryIcon(string currentIcon) => currentIcon switch
-    {
-        "🛒" => "shopping_cart", "🍔" => "restaurant", "🏠" => "home",
-        "🚕" => "local_taxi", "🎉" => "celebration", "💡" => "lightbulb",
-        _ => "receipt_long"
-    };
-}

@@ -1,7 +1,5 @@
 @page "/register"
 @layout SplitMoney.Client.Components.Layout.EmptyLayout
-@inject IAuthService AuthService
-@inject NavigationManager Navigation
 
 <div class="register-page-wrapper">
     <div class="register-box">
@@ -106,44 +104,3 @@
         </EditForm>
     </div>
 </div>
-
-@code {
-    private RegisterUserRequest registerModel = new RegisterUserRequest();
-    private string? errorMessage;
-    private List<string> errors = new List<string>();
-    private bool loading = false;
-    private bool showPassword = false;
-
-    private async Task HandleRegister()
-    {
-        loading = true;
-        errorMessage = null;
-        errors.Clear();
-
-        try
-        {
-            var result = await AuthService.Register(registerModel);
-
-            if (result.Succeeded)
-            {
-                Navigation.NavigateTo("/login");
-            }
-            else
-            {
-                errorMessage = result.Message ?? "Registration failed.";
-                if (result.Errors != null)
-                {
-                    errors = result.Errors;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            loading = false;
-        }
-    }
-}

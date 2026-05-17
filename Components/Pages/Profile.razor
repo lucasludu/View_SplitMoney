@@ -3,9 +3,6 @@
 @using SplitMoney.Client.Models
 @using System.Security.Claims
 @attribute [Authorize]
-@inject IAuthService AuthService
-@inject NavigationManager Navigation
-@inject IModalService ModalService
 
 <div class="profile-wrapper">
     <div class="container py-4 py-md-5">
@@ -154,46 +151,3 @@
         }
     </div>
 </div>
-
-@code {
-    private UserDto userProfile = new();
-    private bool isLoading = true;
-    private bool submitting = false;
-    private bool IsUserPremium = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            IsUserPremium = await AuthService.IsPremiumAsync();
-
-            var response = await AuthService.GetProfile();
-            if (response != null && response.Succeeded && response.Data != null)
-            {
-                userProfile = response.Data;
-            }
-            else Navigation.NavigateTo("/");
-        }
-        catch (Exception)
-        {
-            if (IsUserPremium) userProfile.Role = "PremiumUser";
-            isLoading = false;
-        }
-        finally { isLoading = false; }
-    }
-
-    private async Task HandleUpdateProfile()
-    {
-        submitting = true;
-        try
-        {
-            var response = await AuthService.UpdateProfile(userProfile);
-            if (response != null && response.Succeeded) ModalService.ShowModal("¡Perfil Actualizado!", "Tus cambios han sido guardados correctamente.", ModalType.Success);
-            else ModalService.ShowModal("Error", response?.Message ?? "No se pudo actualizar.", ModalType.Error);
-        }
-        finally { submitting = false; }
-    }
-
-
-    private void GoBack() => Navigation.NavigateTo("/");
-}

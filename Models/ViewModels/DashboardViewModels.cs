@@ -200,3 +200,12 @@ public class SettlementViewModel
     public DateTime Date { get; set; }
     public string? ProofImageUrl { get; set; }
 }
+
+public class DebtSummaryViewModel
+{
+    public Guid GroupId { get; set; }
+    public string GroupName { get; set; } = "";
+    public string CreditorId { get; set; } = "";
+    public string CreditorName { get; set; } = "";
+    public decimal Amount { get; set; }
+}
